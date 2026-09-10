@@ -110,7 +110,7 @@ func (m Model) metricsPage(width int) (string, int) {
 	if err != nil {
 		return errorStyle.Render(trimToWidth(err.Error(), width)), 0
 	}
-	if chart := comparisonChart(width, buildComparisonSeries(p, currentActivity, previousActivity)); len(chart) > 0 {
+	if chart := comparisonChart(width, p, buildComparisonSeries(p, currentActivity, previousActivity)); len(chart) > 0 {
 		lines = append(lines, "")
 		lines = append(lines, chart...)
 	}

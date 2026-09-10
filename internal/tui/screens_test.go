@@ -39,7 +39,7 @@ func TestResponsiveViewsFitTerminalWidth(t *testing.T) {
 			if !strings.HasPrefix(ansi.Strip(content), "VASTAGO") {
 				t.Fatal("header has a lateral margin")
 			}
-			if strings.ContainsAny(content, "╭╮╰╯│") {
+			if strings.ContainsAny(content, "╭╮╰╯") {
 				t.Fatal("screen still contains panel borders")
 			}
 			for number, line := range strings.Split(content, "\n") {

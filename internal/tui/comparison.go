@@ -6,10 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"charm.land/lipgloss/v2"
+	tslc "github.com/NimbleMarkets/ntcharts/v2/linechart/timeserieslinechart"
 
 	"github.com/volcanic001/vastago/internal/store"
 )
+
+const comparisonChartHeight = 8
+
+const previousComparisonDataSet = "previous"
 
 type comparisonSeries struct {
 	labels   []string
@@ -71,12 +75,44 @@ func monthlyActivity(activity []store.DayActivity) []time.Duration {
 	return result
 }
 
-// comparisonChart renders the selected period as a solid line and its prior
-// equivalent as a muted dotted line. It scales both lines with one shared Y axis.
-func comparisonChart(width int, series comparisonSeries) []string {
+// comparisonChart renders both period series with ntcharts' Braille renderer.
+// The chart is rebuilt from the current terminal width on every view, so its
+// axes, data scaling, and label placement always match the available space.
+func comparisonChart(width int, period store.Period, series comparisonSeries) []string {
 	if len(series.labels) == 0 || width < 12 {
 		return nil
 	}
+
+	maximum := comparisonMaximum(series)
+	chartWidth := width
+	chart := tslc.New(chartWidth, comparisonChartHeight,
+		tslc.WithTimeRange(period.Start, period.End),
+		tslc.WithYRange(0, maximum.Seconds()),
+		tslc.WithXYSteps(1, 2),
+		tslc.WithXLabelFormatter(func(int, float64) string { return "" }),
+		tslc.WithYLabelFormatter(comparisonDurationLabel),
+		tslc.WithAxesStyles(mutedStyle, mutedStyle),
+		tslc.WithStyle(titleStyle),
+		tslc.WithDataSetStyle(previousComparisonDataSet, mutedStyle),
+	)
+
+	for index, point := range comparisonPoints(period, series) {
+		valueIndex := min(index, len(series.current)-1)
+		chart.Push(tslc.TimePoint{Time: point, Value: series.current[valueIndex].Seconds()})
+		chart.PushDataSet(previousComparisonDataSet, tslc.TimePoint{Time: point, Value: series.previous[valueIndex].Seconds()})
+	}
+	chart.DrawBrailleAll()
+
+	lines := strings.Split(chart.View(), "\n")
+	if len(lines) > 0 {
+		// ntcharts reserves the last row for X labels. Reuse it so the labels
+		// align with the Braille grid and stay evenly distributed at any width.
+		lines[len(lines)-1] = comparisonLabels(chartWidth, chart.Origin().X, chart.GraphWidth(), series.labels)
+	}
+	return append([]string{comparisonHeader(width)}, lines...)
+}
+
+func comparisonMaximum(series comparisonSeries) time.Duration {
 	maximum := time.Duration(0)
 	for _, values := range [][]time.Duration{series.current, series.previous} {
 		for _, value := range values {
@@ -85,114 +121,60 @@ func comparisonChart(width int, series comparisonSeries) []string {
 			}
 		}
 	}
-	axisWidth := max(2, lipgloss.Width(store.FormatDuration(maximum)))
-	step := 2
-	plotWidth := len(series.labels)*step - 1
-	if axisWidth+1+plotWidth > width {
-		step = 1
-		plotWidth = len(series.labels)
+	if maximum <= 0 {
+		return time.Second
 	}
-	if axisWidth+1+plotWidth > width {
-		return nil
-	}
+	return maximum
+}
 
-	header := "COMPARATIVA · ── actual   ·· anterior"
-	if width < 36 {
-		header = "── actual ·· anterior"
+func comparisonPoints(period store.Period, series comparisonSeries) []time.Time {
+	if len(series.labels) == 1 {
+		// A day has one aggregate value. Duplicate it at both ends only for
+		// rendering, producing a readable horizontal Braille line.
+		return []time.Time{period.Start, period.End}
 	}
-	const height = 5
-	grid := make([][]chartCell, height)
-	for row := range grid {
-		grid[row] = make([]chartCell, plotWidth)
+	points := make([]time.Time, len(series.labels))
+	span := period.End.Sub(period.Start)
+	for index := range points {
+		points[index] = period.Start.Add(time.Duration(index) * span / time.Duration(len(points)-1))
 	}
-	drawComparisonLine(grid, series.previous, maximum, step, chartPreviousLine, chartPreviousPoint)
-	drawComparisonLine(grid, series.current, maximum, step, chartCurrentLine, chartCurrentPoint)
+	return points
+}
 
-	lines := []string{mutedStyle.Render(trimToWidth(header, width))}
-	for row := range grid {
-		axis := ""
-		switch row {
-		case 0:
-			axis = store.FormatDuration(maximum)
-		case height / 2:
-			axis = store.FormatDuration(maximum / 2)
-		case height - 1:
-			axis = "0s"
+func comparisonDurationLabel(_ int, seconds float64) string {
+	return store.FormatDuration(time.Duration(math.Round(seconds)) * time.Second)
+}
+
+func comparisonHeader(width int) string {
+	if width < 24 {
+		return titleStyle.Render("── actual") + mutedStyle.Render(" ·· anterior")
+	}
+	return mutedStyle.Render("COMPARATIVA · ") + titleStyle.Render("── actual") + mutedStyle.Render("   ·· anterior")
+}
+
+func comparisonLabels(width, origin, graphWidth int, labels []string) string {
+	if width <= 0 || graphWidth <= 0 || len(labels) == 0 {
+		return ""
+	}
+	line := make([]rune, width)
+	for index := range line {
+		line[index] = ' '
+	}
+	start := origin + 1
+	end := min(width, start+graphWidth)
+	for index, label := range labels {
+		position := start
+		if len(labels) > 1 {
+			position += int(math.Round(float64(index) * float64(graphWidth-1) / float64(len(labels)-1)))
 		}
-		lines = append(lines, mutedStyle.Render(fmt.Sprintf("%*s", axisWidth, axis))+" "+renderChartRow(grid[row]))
-	}
-	labels := make([]rune, plotWidth)
-	for index := range labels {
-		labels[index] = ' '
-	}
-	for index, label := range series.labels {
-		position := index * step
-		for offset, char := range []rune(label) {
-			if position+offset < len(labels) {
-				labels[position+offset] = char
+		labelRunes := []rune(label)
+		position -= len(labelRunes) / 2
+		position = max(start, min(end-len(labelRunes), position))
+		for offset, char := range labelRunes {
+			if position+offset >= start && position+offset < end {
+				line[position+offset] = char
 			}
 		}
 	}
-	lines = append(lines, strings.Repeat(" ", axisWidth+1)+mutedStyle.Render(string(labels)))
-	return lines
-}
-
-type chartCell uint8
-
-const (
-	chartEmpty chartCell = iota
-	chartPreviousLine
-	chartPreviousPoint
-	chartCurrentLine
-	chartCurrentPoint
-)
-
-func drawComparisonLine(grid [][]chartCell, values []time.Duration, maximum time.Duration, step int, line, point chartCell) {
-	if len(values) == 0 {
-		return
-	}
-	for index, value := range values {
-		x := index * step
-		y := comparisonY(value, maximum, len(grid))
-		setChartCell(grid, x, y, point)
-		if index == 0 {
-			continue
-		}
-		previousY := comparisonY(values[index-1], maximum, len(grid))
-		for between := 1; between < step; between++ {
-			setChartCell(grid, x-step+between, (previousY+y)/2, line)
-		}
-	}
-}
-
-func comparisonY(value, maximum time.Duration, height int) int {
-	if maximum <= 0 || height <= 1 {
-		return max(0, height-1)
-	}
-	position := int(math.Round(float64(maximum-value) / float64(maximum) * float64(height-1)))
-	return max(0, min(height-1, position))
-}
-
-func setChartCell(grid [][]chartCell, x, y int, kind chartCell) {
-	if y < 0 || y >= len(grid) || x < 0 || x >= len(grid[y]) || grid[y][x] > kind {
-		return
-	}
-	grid[y][x] = kind
-}
-
-func renderChartRow(row []chartCell) string {
-	var output strings.Builder
-	for _, cell := range row {
-		switch cell {
-		case chartCurrentPoint:
-			output.WriteString(titleStyle.Render("●"))
-		case chartCurrentLine:
-			output.WriteString(titleStyle.Render("─"))
-		case chartPreviousPoint, chartPreviousLine:
-			output.WriteString(mutedStyle.Render("·"))
-		default:
-			output.WriteByte(' ')
-		}
-	}
-	return output.String()
+	return mutedStyle.Render(string(line))
 }
