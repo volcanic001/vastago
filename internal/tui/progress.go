@@ -10,13 +10,13 @@ import (
 )
 
 var (
-	progressStart = color.RGBA{R: 34, G: 197, B: 94, A: 255}
-	progressEnd   = color.RGBA{R: 163, G: 230, B: 53, A: 255}
+	progressBase  = color.RGBA{R: 110, G: 204, B: 94, A: 255}
+	progressDark  = 0.36
 	progressEmpty = lipgloss.NewStyle().Foreground(lipgloss.Color("#34413A"))
 )
 
-// focusProgressBar draws a compact btop-like meter. Its filled cells progress
-// from green to lime and its empty cells remain visible on dark terminals.
+// focusProgressBar draws a compact btop-like meter. Its filled cells keep one
+// green hue and brighten toward their end. Empty cells remain visible on dark terminals.
 func focusProgressBar(width int, fraction float64) string {
 	if width < 3 {
 		return ""
@@ -43,13 +43,17 @@ func focusProgressBar(width int, fraction float64) string {
 
 func progressColor(index, total int) color.RGBA {
 	if total <= 1 {
-		return progressEnd
+		return scaleProgressColor(1)
 	}
 	ratio := float64(index) / float64(total-1)
+	return scaleProgressColor(progressDark + (1-progressDark)*ratio)
+}
+
+func scaleProgressColor(brightness float64) color.RGBA {
 	return color.RGBA{
-		R: uint8(math.Round(float64(progressStart.R) + (float64(progressEnd.R)-float64(progressStart.R))*ratio)),
-		G: uint8(math.Round(float64(progressStart.G) + (float64(progressEnd.G)-float64(progressStart.G))*ratio)),
-		B: uint8(math.Round(float64(progressStart.B) + (float64(progressEnd.B)-float64(progressStart.B))*ratio)),
+		R: uint8(math.Round(float64(progressBase.R) * brightness)),
+		G: uint8(math.Round(float64(progressBase.G) * brightness)),
+		B: uint8(math.Round(float64(progressBase.B) * brightness)),
 		A: 255,
 	}
 }

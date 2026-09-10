@@ -136,7 +136,7 @@ func (m Model) metricsFooter(width int) string {
 		hints = "d/w/m/y periodo\n[/] cambiar · t hoy\nj/k mover · tab · q"
 	}
 	if m.help {
-		hints += "\nHabitos: incluye hoy. Puntos: intensidad diaria; barras: verde a lima y parte del total."
+		hints += "\nHabitos: incluye hoy. Puntos: intensidad diaria; barras: un verde con brillo progresivo."
 	}
 	if m.err != nil {
 		hints = "error: " + m.err.Error() + "\n" + hints
