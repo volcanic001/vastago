@@ -61,10 +61,21 @@ func (m Model) View() tea.View {
 	if inner > 116 {
 		inner = 116
 	}
-	body := m.dashboard(inner)
-	if m.screen == sessionsScreen {
+
+	var body string
+	switch m.screen {
+	case sessionsScreen:
 		body = m.history(inner)
+	case todosScreen:
+		body = m.todosScreen(inner)
+	case habitsScreen:
+		body = m.habitsScreen(inner)
+	case metricsScreen:
+		body = m.metricsScreen(inner)
+	default:
+		body = m.dashboard(inner)
 	}
+
 	content := lipgloss.JoinVertical(lipgloss.Left, m.header(inner), body, m.footer(inner))
 	if m.width > inner {
 		content = lipgloss.NewStyle().Width(m.width).Align(lipgloss.Center).Render(content)

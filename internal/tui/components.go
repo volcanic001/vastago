@@ -17,10 +17,10 @@ func (m Model) header(width int) string {
 	if width >= 29 {
 		left += "  " + mutedStyle.Render("crecer con intencion")
 	}
-	right := mutedStyle.Render(fmt.Sprintf("%s · %s", m.screen.name(), density))
+	right := mutedStyle.Render(fmt.Sprintf("%s · %s · %s", m.now.Format("02/01 15:04"), m.screen.name(), density))
 	gap := width - lipgloss.Width(left) - lipgloss.Width(right)
 	if gap < 1 || width < compactBreakpoint {
-		return left + "\n" + mutedStyle.Render(trimToWidth(fmt.Sprintf("%s · %s", m.screen.name(), density), width))
+		return left + "\n" + mutedStyle.Render(trimToWidth(fmt.Sprintf("%s · %s · %s", m.now.Format("02/01 15:04"), m.screen.name(), density), width))
 	}
 	return left + strings.Repeat(" ", gap) + right
 }
@@ -36,12 +36,12 @@ func (m Model) footer(width int) string {
 		status = "\n" + mutedStyle.Render(trimToWidth(m.message, width))
 	}
 
-	help := "n nueva · x terminar · tab vista · ? ayuda · q salir"
+	help := "1-5 vistas · n nueva · x terminar · ? ayuda · q salir"
 	if m.help {
-		help = "n inicia una sesion · x termina · tab cambia vista · r recarga · q sale"
+		help = "1-5 o tab cambian vista · n inicia · x termina · r recarga · q sale"
 	}
 	if m.width < compactBreakpoint {
-		help = "n nueva · x fin · tab vista · q salir"
+		help = "1-5 vista · n nueva · x fin · q salir"
 	}
 	return status + "\n" + mutedStyle.Render(trimToWidth(help, width))
 }
@@ -67,4 +67,12 @@ func trimToWidth(value string, width int) string {
 		runes = runes[:len(runes)-1]
 	}
 	return string(runes) + "…"
+}
+
+func (m Model) emptyScreen(width int, title, message string) string {
+	content := mutedStyle.Render(title) + "\n\n" + valueStyle.Render(message)
+	if m.width < compactBreakpoint || m.height < 26 {
+		return "\n" + trimToWidth(title, width) + "\n" + mutedStyle.Render(trimToWidth(message, width))
+	}
+	return "\n" + panelStyle.Width(max(20, width-4)).Render(content)
 }

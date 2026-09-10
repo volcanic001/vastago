@@ -38,6 +38,16 @@ func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m = m.nextScreen()
 	case "shift+tab", "left", "h":
 		m = m.previousScreen()
+	case "1":
+		m = m.selectScreen(homeScreen)
+	case "2":
+		m = m.selectScreen(sessionsScreen)
+	case "3":
+		m = m.selectScreen(todosScreen)
+	case "4":
+		m = m.selectScreen(habitsScreen)
+	case "5":
+		m = m.selectScreen(metricsScreen)
 	case "?":
 		m.help = !m.help
 	case "r":

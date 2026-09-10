@@ -5,21 +5,40 @@ type screen int
 const (
 	homeScreen screen = iota
 	sessionsScreen
+	todosScreen
+	habitsScreen
+	metricsScreen
+	screenCount
 )
 
 func (m Model) nextScreen() Model {
-	m.screen = (m.screen + 1) % 2
+	m.screen = (m.screen + 1) % screenCount
 	return m
 }
 
 func (m Model) previousScreen() Model {
-	m.screen = (m.screen + 1) % 2
+	m.screen = (m.screen - 1 + screenCount) % screenCount
+	return m
+}
+
+func (m Model) selectScreen(selected screen) Model {
+	if selected >= homeScreen && selected < screenCount {
+		m.screen = selected
+	}
 	return m
 }
 
 func (s screen) name() string {
-	if s == sessionsScreen {
-		return "historial"
+	switch s {
+	case sessionsScreen:
+		return "sesiones"
+	case todosScreen:
+		return "pendientes"
+	case habitsScreen:
+		return "habitos"
+	case metricsScreen:
+		return "metricas"
+	default:
+		return "inicio"
 	}
-	return "inicio"
 }
