@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
 	"github.com/volcanic001/vastago/internal/store"
@@ -36,170 +35,6 @@ var (
 			Padding(0, 1)
 )
 
-type tickMsg time.Time
-
-type Model struct {
-	path      string
-	db        *store.Database
-	now       time.Time
-	width     int
-	height    int
-	page      int
-	help      bool
-	inputMode bool
-	input     []rune
-	message   string
-	err       error
-}
-
-func New(path string) Model {
-	db, err := store.Load(path)
-	if db == nil {
-		db = &store.Database{}
-	}
-	return Model{
-		path:   path,
-		db:     db,
-		now:    time.Now(),
-		width:  80,
-		height: 24,
-		err:    err,
-	}
-}
-
-func (m Model) Init() tea.Cmd {
-	return tick()
-}
-
-func tick() tea.Cmd {
-	return tea.Tick(time.Second, func(value time.Time) tea.Msg {
-		return tickMsg(value)
-	})
-}
-
-func (m Model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
-	switch message := message.(type) {
-	case tea.WindowSizeMsg:
-		m.width = message.Width
-		m.height = message.Height
-	case tickMsg:
-		m.now = time.Time(message)
-		return m, tick()
-	case tea.KeyPressMsg:
-		return m.handleKey(message)
-	}
-	return m, nil
-}
-
-func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	key := message.String()
-	if m.inputMode {
-		switch key {
-		case "esc":
-			m.inputMode = false
-			m.input = nil
-			m.message = "cancelado"
-		case "enter":
-			task := strings.TrimSpace(string(m.input))
-			if task == "" {
-				m.message = "escribe el nombre de la tarea"
-				return m, nil
-			}
-			if _, err := m.db.Start(time.Now(), task, ""); err != nil {
-				m.err = err
-			} else if err := store.Save(m.path, m.db); err != nil {
-				m.err = err
-			} else {
-				m.message = "sesion iniciada"
-				m.err = nil
-				m.inputMode = false
-				m.input = nil
-			}
-		case "backspace", "ctrl+h":
-			if len(m.input) > 0 {
-				m.input = m.input[:len(m.input)-1]
-			}
-		default:
-			if text := message.Key().Text; text != "" {
-				m.input = append(m.input, []rune(text)...)
-			}
-		}
-		return m, nil
-	}
-
-	switch key {
-	case "q", "ctrl+c":
-		return m, tea.Quit
-	case "n":
-		if m.db.Active() != nil {
-			m.message = "termina la sesion actual primero"
-			return m, nil
-		}
-		m.inputMode = true
-		m.input = nil
-		m.message = ""
-		m.err = nil
-	case "x":
-		if m.db.Active() == nil {
-			m.err = nil
-			m.message = "Sin sesión activa."
-			return m, nil
-		}
-		entry, err := m.db.Stop(time.Now(), "")
-		if err != nil {
-			m.err = err
-		} else if err := store.Save(m.path, m.db); err != nil {
-			m.err = err
-		} else {
-			m.message = "terminada: " + entry.Task
-			m.err = nil
-		}
-	case "tab", "right", "l":
-		m.page = (m.page + 1) % 2
-	case "shift+tab", "left", "h":
-		m.page = (m.page + 1) % 2
-	case "?":
-		m.help = !m.help
-	case "r":
-		db, err := store.Load(m.path)
-		if err != nil {
-			m.err = err
-		} else {
-			m.db = db
-			m.err = nil
-			m.message = "datos actualizados"
-		}
-	}
-	return m, nil
-}
-
-func (m Model) View() tea.View {
-	width := m.width
-	if width <= 0 {
-		width = 80
-	}
-	inner := max(10, width-2)
-	if inner > 116 {
-		inner = 116
-	}
-
-	header := m.header(inner)
-	var body string
-	if m.page == 1 {
-		body = m.history(inner)
-	} else {
-		body = m.dashboard(inner)
-	}
-	footer := m.footer(inner)
-	content := lipgloss.JoinVertical(lipgloss.Left, header, body, footer)
-	if m.width > inner {
-		content = lipgloss.NewStyle().Width(m.width).Align(lipgloss.Center).Render(content)
-	}
-	view := tea.NewView(content)
-	view.AltScreen = true
-	return view
-}
-
 func (m Model) header(width int) string {
 	density := "amplia"
 	if m.width < compactBreakpoint || m.height < 26 {
@@ -211,10 +46,10 @@ func (m Model) header(width int) string {
 	if width >= 29 {
 		left += "  " + mutedStyle.Render("crecer con intencion")
 	}
-	right := mutedStyle.Render(fmt.Sprintf("%s · %s", pageName(m.page), density))
+	right := mutedStyle.Render(fmt.Sprintf("%s · %s", m.screen.name(), density))
 	gap := width - lipgloss.Width(left) - lipgloss.Width(right)
 	if gap < 1 || width < compactBreakpoint {
-		return left + "\n" + mutedStyle.Render(trimToWidth(fmt.Sprintf("%s · %s", pageName(m.page), density), width))
+		return left + "\n" + mutedStyle.Render(trimToWidth(fmt.Sprintf("%s · %s", m.screen.name(), density), width))
 	}
 	return left + strings.Repeat(" ", gap) + right
 }
@@ -367,13 +202,6 @@ func statLine(label, value string, width int) string {
 		gap = 1
 	}
 	return mutedStyle.Render(plainLabel) + strings.Repeat(" ", gap) + valueStyle.Render(value)
-}
-
-func pageName(page int) string {
-	if page == 1 {
-		return "historial"
-	}
-	return "inicio"
 }
 
 func trimToWidth(value string, width int) string {

@@ -33,16 +33,16 @@ func TestResponsiveViewsFitTerminalWidth(t *testing.T) {
 		{96, 30},
 		{140, 40},
 	} {
-		for page := 0; page < 2; page++ {
-			model := Model{db: db, now: now, width: size.width, height: size.height, page: page}
+		for currentScreen := homeScreen; currentScreen <= sessionsScreen; currentScreen++ {
+			model := Model{db: db, now: now, width: size.width, height: size.height, screen: currentScreen}
 			content := model.View().Content
 			for number, line := range strings.Split(content, "\n") {
 				if got := lipgloss.Width(line); got > size.width {
-					t.Fatalf("size %dx%d page %d line %d width = %d; line %q", size.width, size.height, page, number+1, got, line)
+					t.Fatalf("size %dx%d screen %d line %d width = %d; line %q", size.width, size.height, currentScreen, number+1, got, line)
 				}
 			}
 			if got := len(strings.Split(content, "\n")); got > size.height {
-				t.Fatalf("size %dx%d page %d height = %d", size.width, size.height, page, got)
+				t.Fatalf("size %dx%d screen %d height = %d", size.width, size.height, currentScreen, got)
 			}
 		}
 	}
