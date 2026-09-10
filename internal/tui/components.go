@@ -7,20 +7,14 @@ import (
 )
 
 func (m Model) header(width int) string {
-	density := "amplia"
-	if m.width < compactBreakpoint || m.height < 26 {
-		density = "minima"
-	} else if m.width < wideBreakpoint || m.height < 24 {
-		density = "compacta"
-	}
 	left := titleStyle.Render("VASTAGO")
 	if width >= 29 {
 		left += "  " + mutedStyle.Render("crecer con intencion")
 	}
-	right := mutedStyle.Render(fmt.Sprintf("%s · %s · %s", m.now.Format("02/01 15:04"), m.screen.name(), density))
+	right := mutedStyle.Render(fmt.Sprintf("%s · %s", m.now.Format("02/01 15:04"), m.screen.name()))
 	gap := width - lipgloss.Width(left) - lipgloss.Width(right)
 	if gap < 1 || width < compactBreakpoint {
-		return left + "\n" + mutedStyle.Render(trimToWidth(fmt.Sprintf("%s · %s · %s", m.now.Format("02/01 15:04"), m.screen.name(), density), width))
+		return left + "\n" + mutedStyle.Render(trimToWidth(fmt.Sprintf("%s · %s", m.now.Format("02/01 15:04"), m.screen.name()), width))
 	}
 	return left + strings.Repeat(" ", gap) + right
 }
