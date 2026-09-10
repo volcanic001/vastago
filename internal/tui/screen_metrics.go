@@ -98,13 +98,21 @@ func (m Model) metricsPage(width int) (string, int) {
 	} else {
 		lines = append(lines, statLine("Habitos", fmt.Sprintf("%d/%d · %.0f%%", data.HabitCompletions, data.HabitOpportunities, data.HabitPercent()), width))
 	}
-	activity, err := m.db.Activity(p, m.now)
+	previousPeriod, err := p.Shift(-1)
 	if err != nil {
 		return errorStyle.Render(trimToWidth(err.Error(), width)), 0
 	}
-	if heatmap := focusHeatmap(width, activity); len(heatmap) > 0 {
+	currentActivity, err := m.db.Activity(p, m.now)
+	if err != nil {
+		return errorStyle.Render(trimToWidth(err.Error(), width)), 0
+	}
+	previousActivity, err := m.db.Activity(previousPeriod, m.now)
+	if err != nil {
+		return errorStyle.Render(trimToWidth(err.Error(), width)), 0
+	}
+	if chart := comparisonChart(width, buildComparisonSeries(p, currentActivity, previousActivity)); len(chart) > 0 {
 		lines = append(lines, "")
-		lines = append(lines, heatmap...)
+		lines = append(lines, chart...)
 	}
 	if data.FocusTime == 0 {
 		message := "Sin actividad registrada en este periodo."
@@ -142,7 +150,7 @@ func (m Model) metricsFooter(width int) string {
 		hints = "d/w/m/y · [/] · t\nj/k o ↑↓ · tab · q"
 	}
 	if m.help {
-		hints += "\nHabitos: incluye hoy. Puntos: intensidad diaria; barras: un verde con brillo progresivo."
+		hints += "\nHabitos: incluye hoy. Comparativa: actual frente al periodo anterior."
 	}
 	if m.err != nil {
 		hints = "error: " + m.err.Error() + "\n" + hints
