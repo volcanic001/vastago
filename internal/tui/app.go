@@ -12,22 +12,25 @@ import (
 type tickMsg time.Time
 
 type Model struct {
-	path          string
-	db            *store.Database
-	now           time.Time
-	width         int
-	height        int
-	screen        screen
-	selectedTodo  int
-	selectedHabit int
-	inputAction   inputAction
-	confirmTodo   bool
-	confirmHabit  bool
-	help          bool
-	inputMode     bool
-	input         []rune
-	message       string
-	err           error
+	selectedSession int
+	sessionEdit     *sessionForm
+	sessionDeleteID string
+	path            string
+	db              *store.Database
+	now             time.Time
+	width           int
+	height          int
+	screen          screen
+	selectedTodo    int
+	selectedHabit   int
+	inputAction     inputAction
+	confirmTodo     bool
+	confirmHabit    bool
+	help            bool
+	inputMode       bool
+	input           []rune
+	message         string
+	err             error
 }
 
 func New(path string) Model {
@@ -70,7 +73,7 @@ func (m Model) View() tea.View {
 	var body string
 	switch m.screen {
 	case sessionsScreen:
-		body = m.history(inner)
+		body = m.sessionView(inner)
 	case todosScreen:
 		body = m.todosScreen(inner)
 	case habitsScreen:

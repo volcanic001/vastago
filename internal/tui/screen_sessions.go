@@ -1,48 +1,79 @@
 package tui
 
 import (
-	"charm.land/lipgloss/v2"
 	"fmt"
 	"github.com/volcanic001/vastago/internal/store"
 	"strings"
 )
 
-func (m Model) history(width int) string {
-	narrow := width < compactBreakpoint || m.height < 26
-	limit := max(1, m.height-8)
-	if narrow {
-		limit = max(1, (m.height-7)/2)
+func (m Model) sessionView(width int) string {
+	if m.sessionEdit != nil {
+		return m.sessionFormView(width)
 	}
-	if limit > 14 {
-		limit = 14
+	if len(m.db.Entries) == 0 {
+		return m.emptyScreen(width, "SESIONES", "Aun no hay sesiones. Pulsa n para comenzar.")
 	}
-	entries := m.db.Recent(limit)
-	if len(entries) == 0 {
-		if narrow {
-			return "\n" + mutedStyle.Render(trimToWidth("Aun no hay sesiones. Pulsa n para comenzar.", width))
+	selected := max(0, min(m.selectedSession, len(m.db.Entries)-1))
+	limit := max(1, m.height-7)
+	start := listWindowStart(selected, len(m.db.Entries), limit)
+	lines := []string{mutedStyle.Render(trimToWidth(fmt.Sprintf("SESIONES · %d/%d", selected+1, len(m.db.Entries)), width))}
+	if m.sessionDeleteID != "" {
+		entry := m.db.Entries[len(m.db.Entries)-1-selected]
+		label := "Borrar sesion: "
+		if entry.End == nil {
+			label = "Borrar sesion ACTIVA: "
 		}
-		return "\n" + panelStyle.Width(max(20, width-4)).Render(mutedStyle.Render("Aun no hay sesiones. Pulsa n para comenzar."))
+		return "\n" + errorStyle.Render(trimToWidth(label, width)) + "\n" + valueStyle.Render(trimToWidth(entry.Task, width))
 	}
-	lines := []string{mutedStyle.Render("HISTORIAL RECIENTE")}
-	for _, entry := range entries {
+	for row := start; row < min(len(m.db.Entries), start+limit); row++ {
+		entry := m.db.Entries[len(m.db.Entries)-1-row]
 		state := store.FormatDuration(entry.Duration(m.now))
 		if entry.End == nil {
-			state += " · activa"
+			state += " activa"
 		}
-		if width < 26 {
-			lines = append(lines, fmt.Sprintf("%s %s", entry.Start.Format("02/01"), trimToWidth(entry.Task, max(3, width-6))))
-			lines = append(lines, "  "+mutedStyle.Render(trimToWidth(state, max(3, width-2))))
-		} else if narrow {
-			lines = append(lines, fmt.Sprintf("%s  %s", entry.Start.Format("02/01 15:04"), trimToWidth(entry.Task, max(6, width-15))))
-			lines = append(lines, "           "+mutedStyle.Render(state))
-		} else {
-			date := mutedStyle.Render(entry.Start.Format("Mon 02 · 15:04"))
-			available := max(8, width-lipgloss.Width(date)-lipgloss.Width(state)-8)
-			lines = append(lines, date+"  "+valueStyle.Render(trimToWidth(entry.Task, available))+"  "+mutedStyle.Render(state))
+		line := trimToWidth(fmt.Sprintf("%s %s · %s", entry.Start.Format("02/01"), entry.Task, state), width)
+		if row == selected {
+			line = selectionStyle.Width(width).Render(line)
+		}
+		lines = append(lines, line)
+	}
+	return "\n" + strings.Join(lines, "\n")
+}
+
+func (m Model) sessionFormView(width int) string {
+	form := m.sessionEdit
+	labels := []string{"Tarea", "Nota", "Inicio", "Fin"}
+	lines := []string{titleStyle.Render(trimToWidth("EDITAR SESION", width))}
+	count := 4
+	if form.active {
+		count = 3
+	}
+	if m.height < 16 || width < 40 {
+		lines = append(lines, mutedStyle.Render(trimToWidth(fmt.Sprintf("%d/%d %s", form.field+1, count, labels[form.field]), width)))
+		lines = append(lines, valueStyle.Render(trimToWidth(form.values[form.field], width)))
+	} else {
+		for i := 0; i < count; i++ {
+			line := trimToWidth(labels[i]+": "+form.values[i], width)
+			if i == form.field {
+				line = selectionStyle.Width(width).Render(line)
+			}
+			lines = append(lines, line)
 		}
 	}
-	if narrow {
-		return "\n" + strings.Join(lines, "\n")
+	return "\n" + strings.Join(lines, "\n")
+}
+
+func (m Model) sessionFooter(width int) string {
+	hint := "j/k mover · enter/e editar · d borrar · n nueva · x fin · tab vistas · q salir"
+	if m.sessionEdit != nil {
+		hint = "enter siguiente/guardar · tab campo · ctrl+u limpiar · esc cancelar"
 	}
-	return "\n" + panelStyle.Width(max(20, width-4)).Render(strings.Join(lines, "\n"))
+	if m.sessionDeleteID != "" {
+		hint = "y borrar · n/esc cancelar"
+	}
+	status := m.message
+	if m.err != nil {
+		status = "error: " + m.err.Error()
+	}
+	return "\n" + mutedStyle.Render(trimToWidth(status, width)) + "\n" + mutedStyle.Render(trimToWidth(hint, width))
 }

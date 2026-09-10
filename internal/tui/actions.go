@@ -20,6 +20,11 @@ const (
 )
 
 func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	if !m.inputMode && !m.confirmTodo && !m.confirmHabit && m.screen == sessionsScreen {
+		if updated, handled := m.handleSessionKey(message); handled {
+			return updated, nil
+		}
+	}
 	if m.inputMode {
 		return m.handleInput(message), nil
 	}

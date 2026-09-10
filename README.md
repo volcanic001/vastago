@@ -69,7 +69,23 @@ Teclas en la TUI:
 
 - `n`: iniciar una sesion.
 - `x`: terminar la sesion activa.
-- `tab`: alternar inicio e historial.
+- `1` a `5`: inicio, sesiones, pendientes, habitos y metricas.
+- `tab` y `shift+tab`: cambiar de pantalla.
+
+En Sesiones:
+
+- `j/k` o flechas arriba/abajo: recorrer todo el historial.
+- `enter` o `e`: editar tarea, nota, inicio y fin.
+- `tab` y `shift+tab`: elegir campo; `enter` avanza y guarda desde el ultimo.
+- Fechas en hora local, formato `AAAA-MM-DD HH:MM:SS`.
+- `ctrl+u`: limpiar el campo; `esc`: cancelar sin guardar.
+- `d`: solicitar borrado de la sesion seleccionada, incluso si esta activa.
+- `y`: confirmar borrado; `n` o `esc`: cancelar.
+
+Las sesiones activas conservan su estado al editar: se terminan con `x`.
+Los horarios sin editar conservan su precision original.
+
+Atajos generales:
 - `r`: recargar los datos.
 - `?`: ampliar la ayuda.
 - `q`: salir.

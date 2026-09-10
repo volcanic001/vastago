@@ -20,6 +20,9 @@ func (m Model) header(width int) string {
 }
 
 func (m Model) footer(width int) string {
+	if m.screen == sessionsScreen && !m.inputMode {
+		return m.sessionFooter(width)
+	}
 	var status string
 	if m.inputMode {
 		label := "Nueva sesion: "
