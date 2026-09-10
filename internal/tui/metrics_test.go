@@ -65,14 +65,14 @@ func TestMetricsPeriodNavigation(t *testing.T) {
 func TestMetricsResultsAndFuture(t *testing.T) {
 	m := metricKey(metricsFixture(), 'd')
 	content := ansi.Strip(m.View().Content)
-	for _, want := range []string{"15/01/2026", "Tiempo: 2h 00m", "Sesiones: 1", "Pendientes hechos: 1", "Habitos: 1/1 · 100%", "ACTIVIDAD", "L ", "Lectura", "█"} {
+	for _, want := range []string{"15/01/2026", "RESUMEN", "Tiempo", "2h 00m", "Sesiones", "Pendientes hechos", "Habitos", "1/1 · 100%", "ACTIVIDAD", "L ", "TIEMPO POR TAREA", "Lectura", "█"} {
 		if !strings.Contains(content, want) {
 			t.Fatalf("missing %q: %s", want, content)
 		}
 	}
 	m = metricKey(m, ']')
 	content = ansi.Strip(m.View().Content)
-	if !strings.Contains(content, "Tiempo: 0s") || !strings.Contains(content, "Periodo futuro") {
+	if !strings.Contains(content, "Tiempo") || !strings.Contains(content, "0s") || !strings.Contains(content, "Periodo futuro") || strings.Contains(content, "TIEMPO POR TAREA") {
 		t.Fatal(content)
 	}
 }

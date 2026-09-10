@@ -88,14 +88,15 @@ func (m Model) metricsPage(width int) (string, int) {
 		return errorStyle.Render(trimToWidth(err.Error(), width)), 0
 	}
 	lines := []string{
-		"Tiempo: " + store.FormatDuration(data.FocusTime),
-		fmt.Sprintf("Sesiones: %d", data.Sessions),
-		fmt.Sprintf("Pendientes hechos: %d", data.CompletedTodos),
+		mutedStyle.Render("RESUMEN"),
+		statLine("Tiempo", store.FormatDuration(data.FocusTime), width),
+		statLine("Sesiones", fmt.Sprintf("%d", data.Sessions), width),
+		statLine("Pendientes hechos", fmt.Sprintf("%d", data.CompletedTodos), width),
 	}
 	if data.HabitOpportunities == 0 {
-		lines = append(lines, "Habitos: sin datos")
+		lines = append(lines, statLine("Habitos", "sin datos", width))
 	} else {
-		lines = append(lines, fmt.Sprintf("Habitos: %d/%d · %.0f%%", data.HabitCompletions, data.HabitOpportunities, data.HabitPercent()))
+		lines = append(lines, statLine("Habitos", fmt.Sprintf("%d/%d · %.0f%%", data.HabitCompletions, data.HabitOpportunities, data.HabitPercent()), width))
 	}
 	activity, err := m.db.Activity(p, m.now)
 	if err != nil {
@@ -105,17 +106,19 @@ func (m Model) metricsPage(width int) (string, int) {
 		lines = append(lines, "")
 		lines = append(lines, heatmap...)
 	}
-	if p.Start.After(m.now) {
-		lines = append(lines, "Periodo futuro: sin actividad")
-	}
-	lines = append(lines, "", "TIEMPO POR TAREA")
-	if len(data.Tasks) == 0 {
-		lines = append(lines, "Sin tiempo registrado.")
-	}
-	for _, task := range data.Tasks {
-		fraction := float64(task.Duration) / float64(data.FocusTime)
-		lines = append(lines, task.Task+" · "+store.FormatDuration(task.Duration)+" · "+progressPercent(fraction))
-		lines = append(lines, focusProgressBar(width, fraction))
+	if data.FocusTime == 0 {
+		message := "Sin actividad registrada en este periodo."
+		if p.Start.After(m.now) {
+			message = "Periodo futuro: sin actividad."
+		}
+		lines = append(lines, "", mutedStyle.Render(message))
+	} else {
+		lines = append(lines, "", mutedStyle.Render("TIEMPO POR TAREA"))
+		for _, task := range data.Tasks {
+			fraction := float64(task.Duration) / float64(data.FocusTime)
+			lines = append(lines, task.Task+" · "+store.FormatDuration(task.Duration)+" · "+progressPercent(fraction))
+			lines = append(lines, focusProgressBar(width, fraction))
+		}
 	}
 	// Wrap before scrolling so long labels remain readable on narrow terminals.
 	wrapped := strings.Split(ansi.Wrap(strings.Join(lines, "\n"), max(1, width), ""), "\n")
