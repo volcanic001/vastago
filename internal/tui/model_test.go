@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
 	"github.com/volcanic001/vastago/internal/store"
@@ -51,9 +52,21 @@ func TestTinyDashboardShowsEssentialInformation(t *testing.T) {
 	now := time.Date(2026, time.September, 9, 12, 0, 0, 0, time.Local)
 	model := Model{db: &store.Database{}, now: now, width: 32, height: 12}
 	content := model.View().Content
-	for _, expected := range []string{"VASTAGO", "EN PAUSA", "hoy", "7 dias"} {
+	for _, expected := range []string{"VASTAGO", "SIN SESIÓN ACTIVA", "hoy", "7 dias"} {
 		if !strings.Contains(content, expected) {
 			t.Fatalf("View() does not contain %q: %q", expected, content)
 		}
+	}
+}
+
+func TestStoppingWithoutActiveSessionIsNeutral(t *testing.T) {
+	model := Model{db: &store.Database{}, now: time.Now()}
+	updated, _ := model.handleKey(tea.KeyPressMsg(tea.Key{Code: 'x', Text: "x"}))
+	result := updated.(Model)
+	if result.err != nil {
+		t.Fatalf("handleKey(x) error = %v", result.err)
+	}
+	if result.message != "Sin sesión activa." {
+		t.Fatalf("handleKey(x) message = %q", result.message)
 	}
 }

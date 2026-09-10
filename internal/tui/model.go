@@ -140,6 +140,11 @@ func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.message = ""
 		m.err = nil
 	case "x":
+		if m.db.Active() == nil {
+			m.err = nil
+			m.message = "Sin sesión activa."
+			return m, nil
+		}
 		entry, err := m.db.Stop(time.Now(), "")
 		if err != nil {
 			m.err = err
@@ -237,7 +242,7 @@ func (m Model) compactDashboard(width int) string {
 
 func (m Model) tinyDashboard(width int) string {
 	active := m.db.Active()
-	line := goldStyle.Render("EN PAUSA")
+	line := goldStyle.Render(trimToWidth("SIN SESIÓN ACTIVA", width))
 	if active != nil {
 		line = titleStyle.Render(trimToWidth(active.Task, width-12)) + "  " + valueStyle.Render(store.FormatDuration(active.Duration(m.now)))
 	}
@@ -254,7 +259,7 @@ func (m Model) tinyDashboard(width int) string {
 func (m Model) activeContent(width int) string {
 	active := m.db.Active()
 	if active == nil {
-		return mutedStyle.Render("AHORA") + "\n\n" + goldStyle.Render("En pausa") + "\n" + mutedStyle.Render("Pulsa n para plantar una sesion.")
+		return mutedStyle.Render("AHORA") + "\n\n" + goldStyle.Render("Sin sesión activa") + "\n" + mutedStyle.Render("Pulsa n para iniciar una sesión.")
 	}
 	task := valueStyle.Render(trimToWidth(active.Task, width))
 	duration := titleStyle.Render(store.FormatDuration(active.Duration(m.now)))

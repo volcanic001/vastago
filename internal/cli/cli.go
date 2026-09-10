@@ -15,7 +15,7 @@ import (
 	"github.com/volcanic001/vastago/internal/tui"
 )
 
-const version = "0.1.0"
+const version = "0.1.1"
 
 func Run(args []string, stdout, stderr io.Writer) int {
 	dataPath, remaining, err := globalArgs(args)
