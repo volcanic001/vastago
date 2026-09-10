@@ -10,13 +10,6 @@ func (m Model) todosScreen(width int) string {
 		return m.emptyScreen(width, "PENDIENTES", "Aun no hay pendientes. Pulsa n para crear uno.")
 	}
 
-	open := 0
-	for _, todo := range m.db.Todos {
-		if !todo.Completed() {
-			open++
-		}
-	}
-	completed := len(m.db.Todos) - open
 	contentWidth := width
 	narrow := m.width < compactBreakpoint || m.height < 26
 	limit := max(1, m.height-8)
@@ -37,7 +30,7 @@ func (m Model) todosScreen(width int) string {
 	start := listWindowStart(selectedRow, len(rows), limit)
 	end := min(len(rows), start+limit)
 
-	summary := fmt.Sprintf("PENDIENTES · %d abiertos · %d completados", open, completed)
+	summary := "PENDIENTES"
 	lines := []string{mutedStyle.Render(trimToWidth(summary, contentWidth))}
 	for _, row := range rows[start:end] {
 		if row.todoIndex < 0 {

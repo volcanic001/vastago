@@ -18,7 +18,7 @@ func TestTodoListGroupsOpenBeforeCompleted(t *testing.T) {
 	}}
 	model := Model{db: db, now: now, width: 80, height: 24, screen: todosScreen, selectedTodo: 1}
 	content := ansi.Strip(model.View().Content)
-	for _, want := range []string{"PENDIENTES · 2 abiertos · 1 completados", "ABIERTOS · 2", "COMPLETADOS · 1"} {
+	for _, want := range []string{"PENDIENTES", "ABIERTOS · 2", "COMPLETADOS · 1"} {
 		if !strings.Contains(content, want) {
 			t.Fatalf("list missing %q: %q", want, content)
 		}
