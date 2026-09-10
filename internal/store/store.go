@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	ErrActiveEntry  = errors.New("ya hay una sesion activa")
-	ErrNoActive     = errors.New("no hay una sesion activa")
-	ErrTodoNotFound = errors.New("pendiente no encontrado")
+	ErrActiveEntry   = errors.New("ya hay una sesion activa")
+	ErrNoActive      = errors.New("no hay una sesion activa")
+	ErrTodoNotFound  = errors.New("pendiente no encontrado")
+	ErrHabitNotFound = errors.New("habito no encontrado")
 )
 
 type Entry struct {
@@ -62,9 +63,27 @@ func (t Todo) Completed() bool {
 	return t.CompletedAt != nil
 }
 
+type Habit struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	CreatedAt   time.Time `json:"created_at"`
+	Completions []string  `json:"completions,omitempty"`
+}
+
+func (h Habit) CompletedOn(day time.Time) bool {
+	date := day.Format("2006-01-02")
+	for _, completion := range h.Completions {
+		if completion == date {
+			return true
+		}
+	}
+	return false
+}
+
 type Database struct {
 	Entries []Entry `json:"entries"`
 	Todos   []Todo  `json:"todos,omitempty"`
+	Habits  []Habit `json:"habits,omitempty"`
 }
 
 type TaskTotal struct {
@@ -317,6 +336,70 @@ func (db *Database) DeleteTodo(id string) error {
 func (db *Database) todoIndex(id string) int {
 	for index := range db.Todos {
 		if db.Todos[index].ID == id {
+			return index
+		}
+	}
+	return -1
+}
+
+func (db *Database) AddHabit(now time.Time, name string) (*Habit, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil, errors.New("el habito no puede estar vacio")
+	}
+	habit := Habit{
+		ID:        now.UTC().Format("20060102T150405.000000000"),
+		Name:      name,
+		CreatedAt: now,
+	}
+	db.Habits = append(db.Habits, habit)
+	return &db.Habits[len(db.Habits)-1], nil
+}
+
+func (db *Database) RenameHabit(id, name string) (*Habit, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil, errors.New("el habito no puede estar vacio")
+	}
+	index := db.habitIndex(id)
+	if index < 0 {
+		return nil, ErrHabitNotFound
+	}
+	db.Habits[index].Name = name
+	return &db.Habits[index], nil
+}
+
+func (db *Database) ToggleHabit(day time.Time, id string) (*Habit, error) {
+	index := db.habitIndex(id)
+	if index < 0 {
+		return nil, ErrHabitNotFound
+	}
+	date := day.Format("2006-01-02")
+	for completionIndex, completion := range db.Habits[index].Completions {
+		if completion == date {
+			db.Habits[index].Completions = append(
+				db.Habits[index].Completions[:completionIndex],
+				db.Habits[index].Completions[completionIndex+1:]...,
+			)
+			return &db.Habits[index], nil
+		}
+	}
+	db.Habits[index].Completions = append(db.Habits[index].Completions, date)
+	return &db.Habits[index], nil
+}
+
+func (db *Database) DeleteHabit(id string) error {
+	index := db.habitIndex(id)
+	if index < 0 {
+		return ErrHabitNotFound
+	}
+	db.Habits = append(db.Habits[:index], db.Habits[index+1:]...)
+	return nil
+}
+
+func (db *Database) habitIndex(id string) int {
+	for index := range db.Habits {
+		if db.Habits[index].ID == id {
 			return index
 		}
 	}

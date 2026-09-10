@@ -104,3 +104,45 @@ func TestExistingDatabaseWithoutTodosRemainsCompatible(t *testing.T) {
 		t.Fatalf("Load() database = %#v", db)
 	}
 }
+
+func TestHabitLifecycleAndPersistence(t *testing.T) {
+	now := time.Date(2026, time.September, 10, 8, 0, 0, 0, time.Local)
+	db := &Database{}
+	habit, err := db.AddHabit(now, "  Leer  ")
+	if err != nil {
+		t.Fatalf("AddHabit() error = %v", err)
+	}
+	if habit.Name != "Leer" || habit.CompletedOn(now) {
+		t.Fatalf("AddHabit() = %#v", habit)
+	}
+	if _, err := db.RenameHabit(habit.ID, "Leer 20 minutos"); err != nil {
+		t.Fatalf("RenameHabit() error = %v", err)
+	}
+	if _, err := db.ToggleHabit(now, habit.ID); err != nil {
+		t.Fatalf("ToggleHabit() error = %v", err)
+	}
+	if !db.Habits[0].CompletedOn(now) {
+		t.Fatal("ToggleHabit() did not mark today")
+	}
+
+	path := filepath.Join(t.TempDir(), "store.json")
+	if err := Save(path, db); err != nil {
+		t.Fatalf("Save() error = %v", err)
+	}
+	loaded, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if len(loaded.Habits) != 1 || loaded.Habits[0].Name != "Leer 20 minutos" || !loaded.Habits[0].CompletedOn(now) {
+		t.Fatalf("Load() habits = %#v", loaded.Habits)
+	}
+	if _, err := loaded.ToggleHabit(now, habit.ID); err != nil {
+		t.Fatalf("second ToggleHabit() error = %v", err)
+	}
+	if loaded.Habits[0].CompletedOn(now) {
+		t.Fatal("second ToggleHabit() did not clear today")
+	}
+	if err := loaded.DeleteHabit(habit.ID); err != nil {
+		t.Fatalf("DeleteHabit() error = %v", err)
+	}
+}
