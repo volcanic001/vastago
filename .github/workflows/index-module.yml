@@ -1,0 +1,22 @@
+name: Index Go module
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Prompt the Go proxy to index the release
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: GOPROXY=https://proxy.golang.org go list -m "github.com/volcanic001/vastago@${RELEASE_TAG}"

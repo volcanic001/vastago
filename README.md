@@ -95,6 +95,10 @@ go test ./...
 go run .
 ```
 
+Al publicar una nueva etiqueta `v*`, GitHub Actions solicita su indexacion al
+proxy de Go. Puede haber un breve retraso mientras `@latest` se propaga por la
+red de proxies.
+
 ## Licencia
 
 MIT
