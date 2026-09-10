@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	ErrActiveEntry = errors.New("ya hay una sesion activa")
-	ErrNoActive    = errors.New("no hay una sesion activa")
+	ErrActiveEntry  = errors.New("ya hay una sesion activa")
+	ErrNoActive     = errors.New("no hay una sesion activa")
+	ErrTodoNotFound = errors.New("pendiente no encontrado")
 )
 
 type Entry struct {
@@ -50,8 +51,20 @@ func (e Entry) DurationWithin(start, end time.Time) time.Duration {
 	return entryEnd.Sub(entryStart)
 }
 
+type Todo struct {
+	ID          string     `json:"id"`
+	Title       string     `json:"title"`
+	CreatedAt   time.Time  `json:"created_at"`
+	CompletedAt *time.Time `json:"completed_at,omitempty"`
+}
+
+func (t Todo) Completed() bool {
+	return t.CompletedAt != nil
+}
+
 type Database struct {
 	Entries []Entry `json:"entries"`
+	Todos   []Todo  `json:"todos,omitempty"`
 }
 
 type TaskTotal struct {
@@ -250,4 +263,62 @@ func FormatDuration(value time.Duration) string {
 		return fmt.Sprintf("%dm %02ds", minutes, seconds)
 	}
 	return fmt.Sprintf("%ds", seconds)
+}
+
+func (db *Database) AddTodo(now time.Time, title string) (*Todo, error) {
+	title = strings.TrimSpace(title)
+	if title == "" {
+		return nil, errors.New("el pendiente no puede estar vacio")
+	}
+	todo := Todo{
+		ID:        now.UTC().Format("20060102T150405.000000000"),
+		Title:     title,
+		CreatedAt: now,
+	}
+	db.Todos = append(db.Todos, todo)
+	return &db.Todos[len(db.Todos)-1], nil
+}
+
+func (db *Database) RenameTodo(id, title string) (*Todo, error) {
+	title = strings.TrimSpace(title)
+	if title == "" {
+		return nil, errors.New("el pendiente no puede estar vacio")
+	}
+	index := db.todoIndex(id)
+	if index < 0 {
+		return nil, ErrTodoNotFound
+	}
+	db.Todos[index].Title = title
+	return &db.Todos[index], nil
+}
+
+func (db *Database) ToggleTodo(now time.Time, id string) (*Todo, error) {
+	index := db.todoIndex(id)
+	if index < 0 {
+		return nil, ErrTodoNotFound
+	}
+	if db.Todos[index].Completed() {
+		db.Todos[index].CompletedAt = nil
+	} else {
+		db.Todos[index].CompletedAt = &now
+	}
+	return &db.Todos[index], nil
+}
+
+func (db *Database) DeleteTodo(id string) error {
+	index := db.todoIndex(id)
+	if index < 0 {
+		return ErrTodoNotFound
+	}
+	db.Todos = append(db.Todos[:index], db.Todos[index+1:]...)
+	return nil
+}
+
+func (db *Database) todoIndex(id string) int {
+	for index := range db.Todos {
+		if db.Todos[index].ID == id {
+			return index
+		}
+	}
+	return -1
 }
