@@ -18,6 +18,14 @@ func TestListFootersDescribeBothNavigationMethods(t *testing.T) {
 	}
 }
 
+func TestMetricsFooterUsesOneRowWhenItFits(t *testing.T) {
+	model := Model{db: &store.Database{}, screen: metricsScreen, width: 80}
+	footer := ansi.Strip(model.footer(model.width))
+	if strings.Count(footer, "\n") != 1 {
+		t.Fatalf("metrics footer should be one row: %q", footer)
+	}
+}
+
 func TestTodoAndHabitConfirmationReplaceNormalActions(t *testing.T) {
 	for _, current := range []screen{todosScreen, habitsScreen} {
 		model := Model{db: &store.Database{}, screen: current, width: 100}
