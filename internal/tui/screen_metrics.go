@@ -97,6 +97,14 @@ func (m Model) metricsPage(width int) (string, int) {
 	} else {
 		lines = append(lines, fmt.Sprintf("Habitos: %d/%d · %.0f%%", data.HabitCompletions, data.HabitOpportunities, data.HabitPercent()))
 	}
+	activity, err := m.db.Activity(p, m.now)
+	if err != nil {
+		return errorStyle.Render(trimToWidth(err.Error(), width)), 0
+	}
+	if heatmap := focusHeatmap(width, activity); len(heatmap) > 0 {
+		lines = append(lines, "")
+		lines = append(lines, heatmap...)
+	}
 	if p.Start.After(m.now) {
 		lines = append(lines, "Periodo futuro: sin actividad")
 	}
@@ -129,7 +137,7 @@ func (m Model) metricsFooter(width int) string {
 		hints = "d/w/m/y periodo\n[/] cambiar · t hoy\nj/k mover · tab · q"
 	}
 	if m.help {
-		hints += "\nHabitos: incluye hoy. Barras: parte del tiempo total."
+		hints += "\nHabitos: incluye hoy. Puntos: intensidad diaria; barras: parte del total."
 	}
 	if m.err != nil {
 		hints = "error: " + m.err.Error() + "\n" + hints

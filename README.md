@@ -101,7 +101,8 @@ Pulsa `5` para abrir las metricas (semana actual por defecto).
 - `tab` o `1–5`: cambiar de pantalla; `?`: ayuda.
 
 Se muestran tiempo enfocado, sesiones, pendientes completados y cumplimiento
-de habitos. Las barras representan la proporcion del tiempo total por tarea.
+de habitos. El mapa de actividad usa puntos de intensidad diaria: los tonos mas
+calidos indican mas tiempo enfocado. Las barras representan la proporcion del tiempo total por tarea.
 Las semanas comienzan el lunes. Hoy participa en el cumplimiento de habitos;
 sin oportunidades se muestra «sin datos». Los periodos futuros muestran cero.
 
