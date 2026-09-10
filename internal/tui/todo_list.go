@@ -39,9 +39,11 @@ func todoRows(todos []store.Todo) []todoRow {
 	if open > 0 {
 		rows = append(rows, todoRow{todoIndex: -1, heading: "ABIERTOS · " + strconv.Itoa(open)})
 	}
+	completedHeadingAdded := false
 	for _, index := range todoVisualOrder(todos) {
-		if todos[index].Completed() && completed > 0 && (len(rows) == 0 || rows[len(rows)-1].todoIndex >= 0) {
+		if todos[index].Completed() && completed > 0 && !completedHeadingAdded {
 			rows = append(rows, todoRow{todoIndex: -1, heading: "COMPLETADOS · " + strconv.Itoa(completed)})
+			completedHeadingAdded = true
 		}
 		rows = append(rows, todoRow{todoIndex: index})
 	}

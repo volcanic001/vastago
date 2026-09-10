@@ -23,6 +23,9 @@ func TestTodoListGroupsOpenBeforeCompleted(t *testing.T) {
 			t.Fatalf("list missing %q: %q", want, content)
 		}
 	}
+	if strings.Count(content, "ABIERTOS · 2") != 1 || strings.Count(content, "COMPLETADOS · 1") != 1 {
+		t.Fatalf("section headings repeated: %q", content)
+	}
 	if strings.Index(content, "Primero") > strings.Index(content, "Archivado") {
 		t.Fatalf("open todo was rendered after completed: %q", content)
 	}
