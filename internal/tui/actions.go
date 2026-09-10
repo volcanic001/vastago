@@ -75,14 +75,14 @@ func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.message, m.err = "terminada: "+entry.Task, nil
 		}
 	case "j", "down":
-		if m.screen == todosScreen && m.selectedTodo < len(m.db.Todos)-1 {
-			m.selectedTodo++
+		if m.screen == todosScreen {
+			m = m.moveTodoSelection(1)
 		} else if m.screen == habitsScreen && m.selectedHabit < len(m.db.Habits)-1 {
 			m.selectedHabit++
 		}
 	case "k", "up":
-		if m.screen == todosScreen && m.selectedTodo > 0 {
-			m.selectedTodo--
+		if m.screen == todosScreen {
+			m = m.moveTodoSelection(-1)
 		} else if m.screen == habitsScreen && m.selectedHabit > 0 {
 			m.selectedHabit--
 		}

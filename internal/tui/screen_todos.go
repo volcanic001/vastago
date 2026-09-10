@@ -16,6 +16,7 @@ func (m Model) todosScreen(width int) string {
 			open++
 		}
 	}
+	completed := len(m.db.Todos) - open
 	contentWidth := width
 	narrow := m.width < compactBreakpoint || m.height < 26
 	limit := max(1, m.height-8)
@@ -25,18 +26,31 @@ func (m Model) todosScreen(width int) string {
 	if limit > 16 {
 		limit = 16
 	}
-	start := listWindowStart(m.selectedTodo, len(m.db.Todos), limit)
-	end := min(len(m.db.Todos), start+limit)
+	rows := todoRows(m.db.Todos)
+	selectedRow := 0
+	for row, item := range rows {
+		if item.todoIndex == m.selectedTodo {
+			selectedRow = row
+			break
+		}
+	}
+	start := listWindowStart(selectedRow, len(rows), limit)
+	end := min(len(rows), start+limit)
 
-	lines := []string{mutedStyle.Render(trimToWidth(fmt.Sprintf("PENDIENTES · %d abiertos · %d total", open, len(m.db.Todos)), contentWidth))}
-	for index := start; index < end; index++ {
-		todo := m.db.Todos[index]
+	summary := fmt.Sprintf("PENDIENTES · %d abiertos · %d completados", open, completed)
+	lines := []string{mutedStyle.Render(trimToWidth(summary, contentWidth))}
+	for _, row := range rows[start:end] {
+		if row.todoIndex < 0 {
+			lines = append(lines, mutedStyle.Render(trimToWidth(row.heading, contentWidth)))
+			continue
+		}
+		todo := m.db.Todos[row.todoIndex]
 		marker := "○"
 		if todo.Completed() {
 			marker = "●"
 		}
 		line := fmt.Sprintf("%s %s", marker, trimToWidth(todo.Title, max(1, contentWidth-2)))
-		if index == m.selectedTodo {
+		if row.todoIndex == m.selectedTodo {
 			line = selectionStyle.Width(contentWidth).Render(line)
 		} else if todo.Completed() {
 			line = mutedStyle.Render(line)
@@ -48,12 +62,11 @@ func (m Model) todosScreen(width int) string {
 	if start > 0 {
 		lines[0] += mutedStyle.Render(" · ↑")
 	}
-	if end < len(m.db.Todos) {
+	if end < len(rows) {
 		lines[0] += mutedStyle.Render(" · ↓")
 	}
 
-	content := strings.Join(lines, "\n")
-	return "\n" + content
+	return "\n" + strings.Join(lines, "\n")
 }
 
 func listWindowStart(selected, total, limit int) int {

@@ -63,9 +63,9 @@ func (m Model) footer(width int) string {
 	}
 
 	if m.screen == todosScreen && !m.inputMode {
-		help := "j/k o ↑↓ mover · space completar · n nuevo · e editar · d borrar · tab vistas · q salir"
+		help := "j/k o ↑↓ mover · space completar/reabrir · n nuevo · e editar · d borrar · tab vistas · q salir"
 		if width < compactBreakpoint {
-			help = "j/k mover · space hecho · n nuevo · e editar · d borrar"
+			help = "j/k mover · space marcar · n nuevo · e editar · d borrar"
 		}
 		return status + "\n" + mutedStyle.Render(trimToWidth(help, width))
 	}
