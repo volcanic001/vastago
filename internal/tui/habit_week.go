@@ -14,6 +14,39 @@ func weekStart(now time.Time) time.Time {
 	return day.AddDate(0, 0, -(int(day.Weekday())+6)%7)
 }
 
+func habitCalendarLayout(width int) (labelWidth, gap int, spaced, visible bool) {
+	if width < 14 {
+		return width, 0, false, false
+	}
+	spaced = width >= compactBreakpoint
+	calendarWidth := 7
+	gap = 1
+	if spaced {
+		calendarWidth = 13
+		gap = 2
+	}
+	return width - calendarWidth - gap, gap, spaced, true
+}
+
+func habitListLine(habit store.Habit, now time.Time, selected, completed bool, width int) string {
+	labelWidth, gap, spaced, visible := habitCalendarLayout(width)
+	label := "○ " + trimToWidth(habit.Name, max(1, labelWidth-2))
+	if completed {
+		label = "● " + trimToWidth(habit.Name, max(1, labelWidth-2))
+	}
+	if selected {
+		label = selectionStyle.Width(labelWidth).Render(label)
+	} else if completed {
+		label = mutedStyle.Width(labelWidth).Render(label)
+	} else {
+		label = valueStyle.Width(labelWidth).Render(label)
+	}
+	if !visible {
+		return label
+	}
+	return label + strings.Repeat(" ", gap) + habitWeekGrid(habit, now, spaced)
+}
+
 func habitWeekGrid(habit store.Habit, now time.Time, spaced bool) string {
 	marks := make(map[string]bool, len(habit.Completions))
 	for _, completion := range habit.Completions {

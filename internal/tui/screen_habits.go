@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"charm.land/lipgloss/v2"
-
 	"github.com/volcanic001/vastago/internal/store"
 )
 
@@ -35,34 +33,14 @@ func (m Model) habitsScreen(width int) string {
 	end := min(len(m.db.Habits), start+limit)
 
 	summary := fmt.Sprintf("HABITOS · %d/%d hoy · %d/%d semana", completed, len(m.db.Habits), weekly.HabitCompletions, weekly.HabitOpportunities)
-	showWeekHeader := contentWidth >= compactBreakpoint
-	nameWidth := max(1, contentWidth-18)
+	labelWidth, gap, showWeekHeader, _ := habitCalendarLayout(contentWidth)
 	lines := []string{mutedStyle.Render(trimToWidth(summary, contentWidth))}
 	if showWeekHeader {
-		lines = append(lines, mutedStyle.Render(strings.Repeat(" ", nameWidth+3)+"L M X J V S D"))
+		lines = append(lines, mutedStyle.Render(strings.Repeat(" ", labelWidth+gap)+"L M X J V S D"))
 	}
 	for index := start; index < end; index++ {
 		habit := m.db.Habits[index]
-		marker := "○"
-		if habit.CompletedOn(m.now) {
-			marker = "●"
-		}
-		grid := habitWeekGrid(habit, m.now, showWeekHeader)
-		var line string
-		if showWeekHeader {
-			name := trimToWidth(habit.Name, nameWidth)
-			line = marker + " " + lipgloss.NewStyle().Width(nameWidth).Render(name) + " " + grid
-		} else {
-			name := trimToWidth(habit.Name, max(1, contentWidth-11))
-			line = marker + " " + name + " " + grid
-		}
-		if index == m.selectedHabit {
-			line = selectionStyle.Width(contentWidth).Render(line)
-		} else if habit.CompletedOn(m.now) {
-			line = mutedStyle.Render(line)
-		} else {
-			line = valueStyle.Render(line)
-		}
+		line := habitListLine(habit, m.now, index == m.selectedHabit, habit.CompletedOn(m.now), contentWidth)
 		lines = append(lines, line)
 	}
 	if start > 0 {
