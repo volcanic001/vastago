@@ -15,6 +15,8 @@ const (
 	inputSession inputAction = iota
 	inputTodoNew
 	inputTodoEdit
+	inputHabitNew
+	inputHabitEdit
 )
 
 func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
@@ -25,12 +27,21 @@ func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m.handleTodoConfirmation(message), nil
 	}
 
+	if m.confirmHabit {
+		return m.handleHabitConfirmation(message), nil
+	}
+
 	switch message.String() {
 	case "q", "ctrl+c":
 		return m, tea.Quit
 	case "n":
 		if m.screen == todosScreen {
 			m.inputMode, m.inputAction, m.input = true, inputTodoNew, nil
+			m.message, m.err = "", nil
+			return m, nil
+		}
+		if m.screen == habitsScreen {
+			m.inputMode, m.inputAction, m.input = true, inputHabitNew, nil
 			m.message, m.err = "", nil
 			return m, nil
 		}
@@ -56,25 +67,39 @@ func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "j", "down":
 		if m.screen == todosScreen && m.selectedTodo < len(m.db.Todos)-1 {
 			m.selectedTodo++
+		} else if m.screen == habitsScreen && m.selectedHabit < len(m.db.Habits)-1 {
+			m.selectedHabit++
 		}
 	case "k", "up":
 		if m.screen == todosScreen && m.selectedTodo > 0 {
 			m.selectedTodo--
+		} else if m.screen == habitsScreen && m.selectedHabit > 0 {
+			m.selectedHabit--
 		}
 	case "space":
 		if m.screen == todosScreen {
 			m = m.toggleSelectedTodo()
+		} else if m.screen == habitsScreen {
+			m = m.toggleSelectedHabit()
 		}
 	case "e":
 		if m.screen == todosScreen && len(m.db.Todos) > 0 {
 			m.inputMode, m.inputAction = true, inputTodoEdit
 			m.input = []rune(m.db.Todos[m.selectedTodo].Title)
 			m.message, m.err = "", nil
+		} else if m.screen == habitsScreen && len(m.db.Habits) > 0 {
+			m.inputMode, m.inputAction = true, inputHabitEdit
+			m.input = []rune(m.db.Habits[m.selectedHabit].Name)
+			m.message, m.err = "", nil
 		}
 	case "d":
 		if m.screen == todosScreen && len(m.db.Todos) > 0 {
 			m.confirmTodo = true
 			m.message = "eliminar pendiente? y confirmar · n cancelar"
+			m.err = nil
+		} else if m.screen == habitsScreen && len(m.db.Habits) > 0 {
+			m.confirmHabit = true
+			m.message = "eliminar habito? y confirmar · n cancelar"
 			m.err = nil
 		}
 	case "tab", "right", "l":
@@ -100,12 +125,14 @@ func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		} else {
 			m.db, m.err, m.message = db, nil, "datos actualizados"
 			m.clampTodoSelection()
+			m.clampHabitSelection()
 		}
 	}
 	return m, nil
 }
 
 func (m Model) handleInput(message tea.KeyPressMsg) Model {
+
 	switch message.String() {
 	case "esc":
 		m.inputMode, m.input, m.message = false, nil, "cancelado"
@@ -114,6 +141,12 @@ func (m Model) handleInput(message tea.KeyPressMsg) Model {
 		if value == "" {
 			m.message = "escribe un nombre"
 			return m
+		}
+		if m.inputAction == inputHabitNew {
+			return m.createHabit(value)
+		}
+		if m.inputAction == inputHabitEdit {
+			return m.renameSelectedHabit(value)
 		}
 		switch m.inputAction {
 		case inputTodoNew:
@@ -183,6 +216,7 @@ func (m Model) toggleSelectedTodo() Model {
 }
 
 func (m Model) handleTodoConfirmation(message tea.KeyPressMsg) Model {
+
 	switch message.String() {
 	case "y", "Y":
 		if len(m.db.Todos) > 0 {
@@ -195,6 +229,7 @@ func (m Model) handleTodoConfirmation(message tea.KeyPressMsg) Model {
 			} else {
 				m.message, m.err = "pendiente eliminado", nil
 				m.clampTodoSelection()
+				m.clampHabitSelection()
 			}
 		}
 		m.confirmTodo = false

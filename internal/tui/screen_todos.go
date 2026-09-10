@@ -28,7 +28,7 @@ func (m Model) todosScreen(width int) string {
 	if limit > 16 {
 		limit = 16
 	}
-	start := todoWindowStart(m.selectedTodo, len(m.db.Todos), limit)
+	start := listWindowStart(m.selectedTodo, len(m.db.Todos), limit)
 	end := min(len(m.db.Todos), start+limit)
 
 	lines := []string{mutedStyle.Render(trimToWidth(fmt.Sprintf("PENDIENTES · %d abiertos · %d total", open, len(m.db.Todos)), contentWidth))}
@@ -62,7 +62,7 @@ func (m Model) todosScreen(width int) string {
 	return "\n" + panelStyle.Width(contentWidth).Render(content)
 }
 
-func todoWindowStart(selected, total, limit int) int {
+func listWindowStart(selected, total, limit int) int {
 	if total <= limit || selected < limit {
 		return 0
 	}

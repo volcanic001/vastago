@@ -12,20 +12,22 @@ import (
 type tickMsg time.Time
 
 type Model struct {
-	path         string
-	db           *store.Database
-	now          time.Time
-	width        int
-	height       int
-	screen       screen
-	selectedTodo int
-	inputAction  inputAction
-	confirmTodo  bool
-	help         bool
-	inputMode    bool
-	input        []rune
-	message      string
-	err          error
+	path          string
+	db            *store.Database
+	now           time.Time
+	width         int
+	height        int
+	screen        screen
+	selectedTodo  int
+	selectedHabit int
+	inputAction   inputAction
+	confirmTodo   bool
+	confirmHabit  bool
+	help          bool
+	inputMode     bool
+	input         []rune
+	message       string
+	err           error
 }
 
 func New(path string) Model {

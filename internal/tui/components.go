@@ -27,6 +27,10 @@ func (m Model) footer(width int) string {
 			label = "Nuevo pendiente: "
 		} else if m.inputAction == inputTodoEdit {
 			label = "Editar pendiente: "
+		} else if m.inputAction == inputHabitNew {
+			label = "Nuevo habito: "
+		} else if m.inputAction == inputHabitEdit {
+			label = "Editar habito: "
 		}
 		hint := "enter iniciar · esc cancelar"
 		if m.inputAction != inputSession {
@@ -38,6 +42,14 @@ func (m Model) footer(width int) string {
 		status = "\n" + errorStyle.Render(trimToWidth("error: "+m.err.Error(), width))
 	} else if m.message != "" {
 		status = "\n" + mutedStyle.Render(trimToWidth(m.message, width))
+	}
+
+	if m.screen == habitsScreen && !m.inputMode {
+		help := "↑↓ mover · space marcar hoy · n nuevo · e editar · d borrar · q salir"
+		if m.width < compactBreakpoint {
+			help = "↑↓ mover · space hoy · n nuevo · e editar · d borrar"
+		}
+		return status + "\n" + mutedStyle.Render(trimToWidth(help, width))
 	}
 
 	if m.screen == todosScreen && !m.inputMode {
