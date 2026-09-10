@@ -1,12 +1,14 @@
 package tui
 
 import (
+	"fmt"
+
 	"charm.land/lipgloss/v2"
 	"github.com/volcanic001/vastago/internal/store"
 )
 
 func (m Model) dashboard(width int) string {
-	if m.width < compactBreakpoint || m.height < 26 {
+	if m.width < compactBreakpoint || m.height < 18 {
 		return m.tinyDashboard(width)
 	}
 	if m.width < wideBreakpoint || m.height < 24 {
@@ -38,8 +40,10 @@ func (m Model) tinyDashboard(width int) string {
 		return "\n" + line + "\n" + mutedStyle.Render("hoy ") + valueStyle.Render(store.FormatDuration(today)) +
 			"\n" + mutedStyle.Render("7 dias ") + valueStyle.Render(store.FormatDuration(week))
 	}
+	habitsDone, habitsTotal := m.todayHabits()
+	status := mutedStyle.Render(fmt.Sprintf("habitos %d/%d", habitsDone, habitsTotal)) + "  " + mutedStyle.Render(fmt.Sprintf("pendientes %d", m.openTodos()))
 	return "\n" + line + "\n" + mutedStyle.Render("hoy ") + valueStyle.Render(store.FormatDuration(today)) +
-		"  " + mutedStyle.Render("7 dias ") + valueStyle.Render(store.FormatDuration(week))
+		"  " + mutedStyle.Render("7 dias ") + valueStyle.Render(store.FormatDuration(week)) + "\n" + status
 }
 
 func (m Model) activeContent(width int) string {

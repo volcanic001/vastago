@@ -70,6 +70,14 @@ func (m Model) footer(width int) string {
 		return status + "\n" + mutedStyle.Render(trimToWidth(help, width))
 	}
 
+	if m.screen == homeScreen {
+		help := "n iniciar · x fin · 2 sesiones · 3 pendientes · 4 habitos · 5 metricas · q salir"
+		if width < compactBreakpoint {
+			help = "n iniciar · x fin · 2-5 vistas · q"
+		}
+		return status + "\n" + mutedStyle.Render(trimToWidth(help, width))
+	}
+
 	help := "1-5 vistas · n nueva · x terminar · ? ayuda · q salir"
 	if m.help {
 		help = "1-5 o tab cambian vista · n inicia · x termina · r recarga · q sale"
