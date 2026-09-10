@@ -50,18 +50,22 @@ func (m Model) footer(width int) string {
 		status = "\n" + mutedStyle.Render(trimToWidth(m.message, width))
 	}
 
+	if m.confirmHabit || m.confirmTodo {
+		return status + "\n" + mutedStyle.Render(trimToWidth("y confirmar · n o esc cancelar", width))
+	}
+
 	if m.screen == habitsScreen && !m.inputMode {
-		help := "↑↓ mover · space marcar hoy · n nuevo · e editar · d borrar · q salir"
-		if m.width < compactBreakpoint {
-			help = "↑↓ mover · space hoy · n nuevo · e editar · d borrar"
+		help := "j/k o ↑↓ mover · space marcar hoy · n nuevo · e editar · d borrar · tab vistas · q salir"
+		if width < compactBreakpoint {
+			help = "j/k mover · space hoy · n nuevo · e editar · d borrar"
 		}
 		return status + "\n" + mutedStyle.Render(trimToWidth(help, width))
 	}
 
 	if m.screen == todosScreen && !m.inputMode {
-		help := "↑↓ mover · space completar · n nuevo · e editar · d borrar · q salir"
-		if m.width < compactBreakpoint {
-			help = "↑↓ mover · space hecho · n nuevo · e editar · d borrar"
+		help := "j/k o ↑↓ mover · space completar · n nuevo · e editar · d borrar · tab vistas · q salir"
+		if width < compactBreakpoint {
+			help = "j/k mover · space hecho · n nuevo · e editar · d borrar"
 		}
 		return status + "\n" + mutedStyle.Render(trimToWidth(help, width))
 	}

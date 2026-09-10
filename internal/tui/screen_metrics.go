@@ -131,7 +131,7 @@ func (m Model) metricsPage(width int) (string, int) {
 }
 
 func (m Model) metricsFooter(width int) string {
-	hints := "d dia · w semana · m mes · y año\n[ anterior · ] siguiente · t actual\nj/k desplazar · tab vistas · q salir"
+	hints := "d dia · w semana · m mes · y año\n[ anterior · ] siguiente · t actual\nj/k o ↑↓ desplazar · tab vistas · q salir"
 	if width < 40 {
 		hints = "d/w/m/y periodo\n[/] cambiar · t hoy\nj/k mover · tab · q"
 	}

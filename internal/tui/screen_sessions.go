@@ -64,7 +64,7 @@ func (m Model) sessionFormView(width int) string {
 }
 
 func (m Model) sessionFooter(width int) string {
-	hint := "j/k mover · enter/e editar · d borrar · n nueva · x fin · tab vistas · q salir"
+	hint := "j/k o ↑↓ mover · enter/e editar · d borrar · n nueva · x fin · tab vistas · q salir"
 	if m.sessionEdit != nil {
 		hint = "enter siguiente/guardar · tab campo · ctrl+u limpiar · esc cancelar"
 	}
