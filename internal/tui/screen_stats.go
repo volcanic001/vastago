@@ -32,10 +32,3 @@ func (m Model) totalSince(start time.Time) time.Duration {
 	}
 	return total
 }
-
-func (m Model) metricsScreen(width int) string {
-	taskLimit := min(8, max(1, m.height-11))
-	contentWidth := width
-	content := m.statsContent(contentWidth, taskLimit)
-	return "\n" + content
-}

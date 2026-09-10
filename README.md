@@ -90,6 +90,21 @@ Atajos generales:
 - `?`: ampliar la ayuda.
 - `q`: salir.
 
+## Metricas en la TUI
+
+Pulsa `5` para abrir las metricas (semana actual por defecto).
+
+- `d`, `w`, `m`, `y`: dia, semana, mes o año.
+- `[` y `]`: periodo anterior o siguiente.
+- `t`: volver al periodo actual; sigue el reloj automaticamente.
+- `j/k` o flechas arriba/abajo: desplazar resultados.
+- `tab` o `1–5`: cambiar de pantalla; `?`: ayuda.
+
+Se muestran tiempo enfocado, sesiones, pendientes completados y cumplimiento
+de habitos. Las barras representan la proporcion del tiempo total por tarea.
+Las semanas comienzan el lunes. Hoy participa en el cumplimiento de habitos;
+sin oportunidades se muestra «sin datos». Los periodos futuros muestran cero.
+
 ## Datos
 
 Por defecto se guardan en:

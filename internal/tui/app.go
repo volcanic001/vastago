@@ -11,6 +11,9 @@ import (
 type tickMsg time.Time
 
 type Model struct {
+	metricsKind     store.PeriodKind
+	metricsAnchor   time.Time
+	metricsScroll   int
 	selectedSession int
 	sessionEdit     *sessionForm
 	sessionDeleteID string
@@ -75,7 +78,7 @@ func (m Model) View() tea.View {
 	case habitsScreen:
 		body = m.habitsScreen(inner)
 	case metricsScreen:
-		body = m.metricsScreen(inner)
+		body = m.metricsView(inner)
 	default:
 		body = m.dashboard(inner)
 	}

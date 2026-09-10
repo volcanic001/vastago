@@ -20,6 +20,9 @@ func (m Model) header(width int) string {
 }
 
 func (m Model) footer(width int) string {
+	if m.screen == metricsScreen && !m.inputMode {
+		return m.metricsFooter(width)
+	}
 	if m.screen == sessionsScreen && !m.inputMode {
 		return m.sessionFooter(width)
 	}
