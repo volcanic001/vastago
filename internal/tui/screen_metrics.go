@@ -113,10 +113,9 @@ func (m Model) metricsPage(width int) (string, int) {
 		lines = append(lines, "Sin tiempo registrado.")
 	}
 	for _, task := range data.Tasks {
-		lines = append(lines, task.Task+" · "+store.FormatDuration(task.Duration))
 		fraction := float64(task.Duration) / float64(data.FocusTime)
-		cells := max(1, min(width, int(fraction*float64(width))))
-		lines = append(lines, titleStyle.Render(strings.Repeat("█", cells)))
+		lines = append(lines, task.Task+" · "+store.FormatDuration(task.Duration)+" · "+progressPercent(fraction))
+		lines = append(lines, focusProgressBar(width, fraction))
 	}
 	// Wrap before scrolling so long labels remain readable on narrow terminals.
 	wrapped := strings.Split(ansi.Wrap(strings.Join(lines, "\n"), max(1, width), ""), "\n")
@@ -137,7 +136,7 @@ func (m Model) metricsFooter(width int) string {
 		hints = "d/w/m/y periodo\n[/] cambiar · t hoy\nj/k mover · tab · q"
 	}
 	if m.help {
-		hints += "\nHabitos: incluye hoy. Puntos: intensidad diaria; barras: parte del total."
+		hints += "\nHabitos: incluye hoy. Puntos: intensidad diaria; barras: verde a lima y parte del total."
 	}
 	if m.err != nil {
 		hints = "error: " + m.err.Error() + "\n" + hints
