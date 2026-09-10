@@ -35,13 +35,7 @@ func (m Model) totalSince(start time.Time) time.Duration {
 
 func (m Model) metricsScreen(width int) string {
 	taskLimit := min(8, max(1, m.height-11))
-	contentWidth := max(20, width-4)
-	if m.width < compactBreakpoint || m.height < 26 {
-		contentWidth = width
-	}
+	contentWidth := width
 	content := m.statsContent(contentWidth, taskLimit)
-	if m.width < compactBreakpoint || m.height < 26 {
-		return "\n" + content
-	}
-	return "\n" + panelStyle.Width(contentWidth).Render(content)
+	return "\n" + content
 }

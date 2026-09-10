@@ -97,9 +97,5 @@ func trimToWidth(value string, width int) string {
 }
 
 func (m Model) emptyScreen(width int, title, message string) string {
-	content := mutedStyle.Render(title) + "\n\n" + valueStyle.Render(message)
-	if m.width < compactBreakpoint || m.height < 26 {
-		return "\n" + trimToWidth(title, width) + "\n" + mutedStyle.Render(trimToWidth(message, width))
-	}
-	return "\n" + panelStyle.Width(max(20, width-4)).Render(content)
+	return "\n" + mutedStyle.Render(trimToWidth(title, width)) + "\n" + valueStyle.Render(trimToWidth(message, width))
 }

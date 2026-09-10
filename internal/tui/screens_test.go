@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"github.com/charmbracelet/x/ansi"
 	"strings"
 	"testing"
 	"time"
@@ -35,12 +36,18 @@ func TestResponsiveViewsFitTerminalWidth(t *testing.T) {
 		for currentScreen := homeScreen; currentScreen < screenCount; currentScreen++ {
 			model := Model{db: db, now: now, width: size.width, height: size.height, screen: currentScreen}
 			content := model.View().Content
+			if !strings.HasPrefix(ansi.Strip(content), "VASTAGO") {
+				t.Fatal("header has a lateral margin")
+			}
+			if strings.ContainsAny(content, "╭╮╰╯│─") {
+				t.Fatal("screen still contains panel borders")
+			}
 			for number, line := range strings.Split(content, "\n") {
 				if got := lipgloss.Width(line); got > size.width {
 					t.Fatalf("size %dx%d screen %d line %d width = %d; line %q", size.width, size.height, currentScreen, number+1, got, line)
 				}
 			}
-			if got := len(strings.Split(content, "\n")); got > size.height {
+			if got := len(strings.Split(content, "\n")); got != size.height {
 				t.Fatalf("size %dx%d screen %d height = %d", size.width, size.height, currentScreen, got)
 			}
 		}

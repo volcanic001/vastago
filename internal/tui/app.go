@@ -4,7 +4,6 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 
 	"github.com/volcanic001/vastago/internal/store"
 )
@@ -65,10 +64,7 @@ func (m Model) View() tea.View {
 	if width <= 0 {
 		width = 80
 	}
-	inner := max(10, width-2)
-	if inner > 116 {
-		inner = 116
-	}
+	inner := width
 
 	var body string
 	switch m.screen {
@@ -84,10 +80,7 @@ func (m Model) View() tea.View {
 		body = m.dashboard(inner)
 	}
 
-	content := lipgloss.JoinVertical(lipgloss.Left, m.header(inner), body, m.footer(inner))
-	if m.width > inner {
-		content = lipgloss.NewStyle().Width(m.width).Align(lipgloss.Center).Render(content)
-	}
+	content := screenLayout(m.header(inner), body, m.footer(inner), width, m.height)
 	view := tea.NewView(content)
 	view.AltScreen = true
 	return view

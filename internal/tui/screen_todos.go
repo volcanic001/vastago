@@ -16,11 +16,8 @@ func (m Model) todosScreen(width int) string {
 			open++
 		}
 	}
-	contentWidth := max(12, width-4)
+	contentWidth := width
 	narrow := m.width < compactBreakpoint || m.height < 26
-	if narrow {
-		contentWidth = width
-	}
 	limit := max(1, m.height-8)
 	if narrow {
 		limit = max(1, m.height-7)
@@ -56,10 +53,7 @@ func (m Model) todosScreen(width int) string {
 	}
 
 	content := strings.Join(lines, "\n")
-	if narrow {
-		return "\n" + content
-	}
-	return "\n" + panelStyle.Width(contentWidth).Render(content)
+	return "\n" + content
 }
 
 func listWindowStart(selected, total, limit int) int {

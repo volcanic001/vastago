@@ -14,16 +14,16 @@ func (m Model) dashboard(width int) string {
 	}
 	leftWidth := width*5/9 - 1
 	rightWidth := width - leftWidth - 2
-	left := panelStyle.Width(leftWidth - 4).Render(m.activeContent(leftWidth - 4))
-	right := panelStyle.Width(rightWidth - 4).Render(m.statsContent(rightWidth-4, 5))
+	left := lipgloss.NewStyle().Width(leftWidth).Render(m.activeContent(leftWidth))
+	right := lipgloss.NewStyle().Width(rightWidth).Render(m.statsContent(rightWidth, 5))
 	return "\n" + lipgloss.JoinHorizontal(lipgloss.Top, left, "  ", right)
 }
 
 func (m Model) compactDashboard(width int) string {
-	contentWidth := max(20, width-4)
-	active := panelStyle.Width(contentWidth).Render(m.activeContent(contentWidth))
-	stats := panelStyle.Width(contentWidth).Render(m.statsContent(contentWidth, 3))
-	return "\n" + lipgloss.JoinVertical(lipgloss.Left, active, stats)
+	contentWidth := width
+	active := m.activeContent(contentWidth)
+	stats := m.statsContent(contentWidth, 3)
+	return "\n" + lipgloss.JoinVertical(lipgloss.Left, active, "", stats)
 }
 
 func (m Model) tinyDashboard(width int) string {
