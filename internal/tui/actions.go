@@ -5,22 +5,41 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+
 	"github.com/volcanic001/vastago/internal/store"
+)
+
+type inputAction int
+
+const (
+	inputSession inputAction = iota
+	inputTodoNew
+	inputTodoEdit
 )
 
 func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if m.inputMode {
 		return m.handleInput(message), nil
 	}
+	if m.confirmTodo {
+		return m.handleTodoConfirmation(message), nil
+	}
+
 	switch message.String() {
 	case "q", "ctrl+c":
 		return m, tea.Quit
 	case "n":
+		if m.screen == todosScreen {
+			m.inputMode, m.inputAction, m.input = true, inputTodoNew, nil
+			m.message, m.err = "", nil
+			return m, nil
+		}
 		if m.db.Active() != nil {
 			m.message = "termina la sesion actual primero"
 			return m, nil
 		}
-		m.inputMode, m.input, m.message, m.err = true, nil, "", nil
+		m.inputMode, m.inputAction, m.input = true, inputSession, nil
+		m.message, m.err = "", nil
 	case "x":
 		if m.db.Active() == nil {
 			m.err, m.message = nil, "Sin sesión activa."
@@ -33,6 +52,30 @@ func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.err = err
 		} else {
 			m.message, m.err = "terminada: "+entry.Task, nil
+		}
+	case "j", "down":
+		if m.screen == todosScreen && m.selectedTodo < len(m.db.Todos)-1 {
+			m.selectedTodo++
+		}
+	case "k", "up":
+		if m.screen == todosScreen && m.selectedTodo > 0 {
+			m.selectedTodo--
+		}
+	case "space":
+		if m.screen == todosScreen {
+			m = m.toggleSelectedTodo()
+		}
+	case "e":
+		if m.screen == todosScreen && len(m.db.Todos) > 0 {
+			m.inputMode, m.inputAction = true, inputTodoEdit
+			m.input = []rune(m.db.Todos[m.selectedTodo].Title)
+			m.message, m.err = "", nil
+		}
+	case "d":
+		if m.screen == todosScreen && len(m.db.Todos) > 0 {
+			m.confirmTodo = true
+			m.message = "eliminar pendiente? y confirmar · n cancelar"
+			m.err = nil
 		}
 	case "tab", "right", "l":
 		m = m.nextScreen()
@@ -56,6 +99,7 @@ func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.err = err
 		} else {
 			m.db, m.err, m.message = db, nil, "datos actualizados"
+			m.clampTodoSelection()
 		}
 	}
 	return m, nil
@@ -66,26 +110,105 @@ func (m Model) handleInput(message tea.KeyPressMsg) Model {
 	case "esc":
 		m.inputMode, m.input, m.message = false, nil, "cancelado"
 	case "enter":
-		task := strings.TrimSpace(string(m.input))
-		if task == "" {
-			m.message = "escribe el nombre de la tarea"
+		value := strings.TrimSpace(string(m.input))
+		if value == "" {
+			m.message = "escribe un nombre"
 			return m
 		}
-		if _, err := m.db.Start(time.Now(), task, ""); err != nil {
-			m.err = err
-		} else if err := store.Save(m.path, m.db); err != nil {
-			m.err = err
-		} else {
-			m.message, m.err, m.inputMode, m.input = "sesion iniciada", nil, false, nil
+		switch m.inputAction {
+		case inputTodoNew:
+			if _, err := m.db.AddTodo(time.Now(), value); err != nil {
+				m.err = err
+			} else if err := store.Save(m.path, m.db); err != nil {
+				m.err = err
+			} else {
+				m.selectedTodo = len(m.db.Todos) - 1
+				m.finishInput("pendiente creado")
+			}
+		case inputTodoEdit:
+			if len(m.db.Todos) == 0 {
+				m.finishInput("sin pendientes")
+				return m
+			}
+			id := m.db.Todos[m.selectedTodo].ID
+			if _, err := m.db.RenameTodo(id, value); err != nil {
+				m.err = err
+			} else if err := store.Save(m.path, m.db); err != nil {
+				m.err = err
+			} else {
+				m.finishInput("pendiente actualizado")
+			}
+		default:
+			if _, err := m.db.Start(time.Now(), value, ""); err != nil {
+				m.err = err
+			} else if err := store.Save(m.path, m.db); err != nil {
+				m.err = err
+			} else {
+				m.finishInput("sesion iniciada")
+			}
 		}
 	case "backspace", "ctrl+h":
 		if len(m.input) > 0 {
 			m.input = m.input[:len(m.input)-1]
 		}
+	case "ctrl+u":
+		m.input = nil
 	default:
 		if text := message.Key().Text; text != "" {
 			m.input = append(m.input, []rune(text)...)
 		}
 	}
 	return m
+}
+
+func (m *Model) finishInput(message string) {
+	m.inputMode, m.input, m.message, m.err = false, nil, message, nil
+}
+
+func (m Model) toggleSelectedTodo() Model {
+	if len(m.db.Todos) == 0 {
+		return m
+	}
+	todo, err := m.db.ToggleTodo(time.Now(), m.db.Todos[m.selectedTodo].ID)
+	if err != nil {
+		m.err = err
+	} else if err := store.Save(m.path, m.db); err != nil {
+		m.err = err
+	} else if todo.Completed() {
+		m.message, m.err = "pendiente completado", nil
+	} else {
+		m.message, m.err = "pendiente reabierto", nil
+	}
+	return m
+}
+
+func (m Model) handleTodoConfirmation(message tea.KeyPressMsg) Model {
+	switch message.String() {
+	case "y", "Y":
+		if len(m.db.Todos) > 0 {
+			err := m.db.DeleteTodo(m.db.Todos[m.selectedTodo].ID)
+			if err == nil {
+				err = store.Save(m.path, m.db)
+			}
+			if err != nil {
+				m.err = err
+			} else {
+				m.message, m.err = "pendiente eliminado", nil
+				m.clampTodoSelection()
+			}
+		}
+		m.confirmTodo = false
+	case "n", "N", "esc":
+		m.confirmTodo = false
+		m.message = "eliminacion cancelada"
+	}
+	return m
+}
+
+func (m *Model) clampTodoSelection() {
+	if len(m.db.Todos) == 0 {
+		m.selectedTodo = 0
+	} else if m.selectedTodo >= len(m.db.Todos) {
+		m.selectedTodo = len(m.db.Todos) - 1
+	}
 }

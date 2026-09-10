@@ -16,12 +16,13 @@ var (
 	colorDanger  = lipgloss.Color("#E07A5F")
 	colorSurface = lipgloss.Color("#18201B")
 
-	titleStyle = lipgloss.NewStyle().Bold(true).Foreground(colorLeaf)
-	mutedStyle = lipgloss.NewStyle().Foreground(colorMuted)
-	valueStyle = lipgloss.NewStyle().Bold(true).Foreground(colorCream)
-	goldStyle  = lipgloss.NewStyle().Bold(true).Foreground(colorGold)
-	errorStyle = lipgloss.NewStyle().Foreground(colorDanger)
-	panelStyle = lipgloss.NewStyle().
+	titleStyle     = lipgloss.NewStyle().Bold(true).Foreground(colorLeaf)
+	mutedStyle     = lipgloss.NewStyle().Foreground(colorMuted)
+	valueStyle     = lipgloss.NewStyle().Bold(true).Foreground(colorCream)
+	goldStyle      = lipgloss.NewStyle().Bold(true).Foreground(colorGold)
+	errorStyle     = lipgloss.NewStyle().Foreground(colorDanger)
+	selectionStyle = lipgloss.NewStyle().Bold(true).Foreground(colorSurface).Background(colorGold)
+	panelStyle     = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(colorPanel).
 			Padding(0, 1)

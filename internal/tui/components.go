@@ -22,12 +22,30 @@ func (m Model) header(width int) string {
 func (m Model) footer(width int) string {
 	var status string
 	if m.inputMode {
+		label := "Nueva sesion: "
+		if m.inputAction == inputTodoNew {
+			label = "Nuevo pendiente: "
+		} else if m.inputAction == inputTodoEdit {
+			label = "Editar pendiente: "
+		}
+		hint := "enter iniciar · esc cancelar"
+		if m.inputAction != inputSession {
+			hint = "enter guardar · esc cancelar · ctrl+u limpiar"
+		}
 		cursor := lipgloss.NewStyle().Background(colorLeaf).Foreground(colorSurface).Render(" ")
-		status = "\n" + goldStyle.Render("Nueva sesion: ") + string(m.input) + cursor + "\n" + mutedStyle.Render("enter iniciar · esc cancelar")
+		status = "\n" + goldStyle.Render(label) + string(m.input) + cursor + "\n" + mutedStyle.Render(hint)
 	} else if m.err != nil {
 		status = "\n" + errorStyle.Render(trimToWidth("error: "+m.err.Error(), width))
 	} else if m.message != "" {
 		status = "\n" + mutedStyle.Render(trimToWidth(m.message, width))
+	}
+
+	if m.screen == todosScreen && !m.inputMode {
+		help := "↑↓ mover · space completar · n nuevo · e editar · d borrar · q salir"
+		if m.width < compactBreakpoint {
+			help = "↑↓ mover · space hecho · n nuevo · e editar · d borrar"
+		}
+		return status + "\n" + mutedStyle.Render(trimToWidth(help, width))
 	}
 
 	help := "1-5 vistas · n nueva · x terminar · ? ayuda · q salir"
