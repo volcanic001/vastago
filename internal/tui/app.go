@@ -17,6 +17,7 @@ type Model struct {
 	selectedSession int
 	sessionEdit     *sessionForm
 	sessionDeleteID string
+	sessionDetailID string
 	path            string
 	db              *store.Database
 	now             time.Time

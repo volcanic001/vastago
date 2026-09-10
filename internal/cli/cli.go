@@ -18,6 +18,7 @@ import (
 const version = "0.1.2"
 
 func Run(args []string, stdout, stderr io.Writer) int {
+	configureLocalTimezone()
 	dataPath, remaining, err := globalArgs(args)
 	if err != nil {
 		fmt.Fprintln(stderr, "error:", err)
@@ -105,7 +106,7 @@ func runStart(path string, args []string, stdout, stderr io.Writer) int {
 	if err := store.Save(path, db); err != nil {
 		return reportError(stderr, err)
 	}
-	fmt.Fprintf(stdout, "Iniciada: %s (%s)\n", entry.Task, entry.Start.Format("15:04"))
+	fmt.Fprintf(stdout, "Iniciada: %s (%s)\n", entry.Task, entry.Start.Local().Format("15:04"))
 	return 0
 }
 
@@ -172,7 +173,7 @@ func runStatus(path string, stdout, stderr io.Writer) int {
 		return 0
 	}
 	now := time.Now()
-	fmt.Fprintf(stdout, "%s · %s · desde %s\n", entry.Task, store.FormatDuration(entry.Duration(now)), entry.Start.Format("15:04"))
+	fmt.Fprintf(stdout, "%s · %s · desde %s\n", entry.Task, store.FormatDuration(entry.Duration(now)), entry.Start.Local().Format("15:04"))
 	return 0
 }
 
@@ -198,7 +199,7 @@ func runLog(path string, args []string, stdout, stderr io.Writer) int {
 		if entry.End == nil {
 			state += " activa"
 		}
-		fmt.Fprintf(stdout, "%s  %-24s %s\n", entry.Start.Format("2006-01-02 15:04"), trim(entry.Task, 24), state)
+		fmt.Fprintf(stdout, "%s  %-24s %s\n", entry.Start.Local().Format("2006-01-02 15:04"), trim(entry.Task, 24), state)
 		if entry.Note != "" {
 			fmt.Fprintf(stdout, "                  %s\n", entry.Note)
 		}

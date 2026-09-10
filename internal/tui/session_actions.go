@@ -23,6 +23,13 @@ func (m Model) handleSessionKey(key tea.KeyPressMsg) (Model, bool) {
 	if m.sessionEdit != nil {
 		return m.editSessionKey(key), true
 	}
+	if m.sessionDetailID != "" {
+		switch key.String() {
+		case "i", "esc", "enter":
+			m.sessionDetailID = ""
+		}
+		return m, true
+	}
 	if m.sessionDeleteID != "" {
 		switch key.String() {
 		case "y", "Y":
@@ -50,12 +57,17 @@ func (m Model) handleSessionKey(key tea.KeyPressMsg) (Model, bool) {
 		m.selectedSession = min(m.selectedSession+1, max(0, len(m.db.Entries)-1))
 	case "k", "up":
 		m.selectedSession = max(0, m.selectedSession-1)
-	case "e", "enter", "d":
+	case "e", "enter", "d", "i":
 		if len(m.db.Entries) == 0 {
 			return m, true
 		}
 		entry := m.db.Entries[len(m.db.Entries)-1-m.selectedSession]
 		m.err, m.message = nil, ""
+
+		if key.String() == "i" {
+			m.sessionDetailID = entry.ID
+			return m, true
+		}
 		if key.String() == "d" {
 			m.sessionDeleteID = entry.ID
 			return m, true

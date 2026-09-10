@@ -2,13 +2,18 @@ package tui
 
 import (
 	"fmt"
-	"github.com/volcanic001/vastago/internal/store"
 	"strings"
+	"time"
+
+	"github.com/volcanic001/vastago/internal/store"
 )
 
 func (m Model) sessionView(width int) string {
 	if m.sessionEdit != nil {
 		return m.sessionFormView(width)
+	}
+	if m.sessionDetailID != "" {
+		return m.sessionDetailView(width)
 	}
 	if len(m.db.Entries) == 0 {
 		return m.emptyScreen(width, "SESIONES", "Aun no hay sesiones. Pulsa n para comenzar.")
@@ -27,17 +32,49 @@ func (m Model) sessionView(width int) string {
 	}
 	for row := start; row < min(len(m.db.Entries), start+limit); row++ {
 		entry := m.db.Entries[len(m.db.Entries)-1-row]
-		state := store.FormatDuration(entry.Duration(m.now))
-		if entry.End == nil {
-			state += " activa"
-		}
-		line := trimToWidth(fmt.Sprintf("%s %s · %s", entry.Start.Format("02/01"), entry.Task, state), width)
+		line := sessionListLine(entry, m.now, width)
 		if row == selected {
 			line = selectionStyle.Width(width).Render(line)
 		}
 		lines = append(lines, line)
 	}
 	return "\n" + strings.Join(lines, "\n")
+}
+
+func sessionListLine(entry store.Entry, now time.Time, width int) string {
+	start := entry.Start.Local()
+	stamp := start.Format("02/01 15:04")
+	if entry.End == nil {
+		stamp += "–ahora"
+	} else {
+		stamp += "–" + entry.End.Local().Format("15:04")
+	}
+	state := store.FormatDuration(entry.Duration(now))
+	if entry.End == nil {
+		state += " activa"
+	}
+	if width < compactBreakpoint {
+		return trimToWidth(fmt.Sprintf("%s %s · %s", start.Format("02/01 15:04"), entry.Task, state), width)
+	}
+	return trimToWidth(fmt.Sprintf("%s · %s · %s", stamp, entry.Task, state), width)
+}
+
+func (m Model) sessionDetailView(width int) string {
+	for _, entry := range m.db.Entries {
+		if entry.ID != m.sessionDetailID {
+			continue
+		}
+		end := "activa"
+		if entry.End != nil {
+			end = entry.End.Local().Format("02/01/2006 15:04")
+		}
+		lines := []string{titleStyle.Render("DETALLE DE SESION"), valueStyle.Render(trimToWidth(entry.Task, width)), mutedStyle.Render("Inicio " + entry.Start.Local().Format("02/01/2006 15:04")), mutedStyle.Render("Fin " + end), mutedStyle.Render("Duracion " + store.FormatDuration(entry.Duration(m.now)))}
+		if entry.Note != "" {
+			lines = append(lines, mutedStyle.Render(trimToWidth(entry.Note, width)))
+		}
+		return "\n" + strings.Join(lines, "\n")
+	}
+	return m.emptyScreen(width, "SESIONES", "La sesion ya no existe.")
 }
 
 func (m Model) sessionFormView(width int) string {
@@ -64,9 +101,12 @@ func (m Model) sessionFormView(width int) string {
 }
 
 func (m Model) sessionFooter(width int) string {
-	hint := "j/k o ↑↓ mover · enter/e editar · d borrar · n nueva · x fin · tab vistas · q salir"
+	hint := "j/k o ↑↓ mover · i detalle · enter/e editar · d borrar · n nueva · x fin · tab vistas · q salir"
 	if m.sessionEdit != nil {
 		hint = "enter siguiente/guardar · tab campo · ctrl+u limpiar · esc cancelar"
+	}
+	if m.sessionDetailID != "" {
+		hint = "i o esc volver"
 	}
 	if m.sessionDeleteID != "" {
 		hint = "y borrar · n/esc cancelar"
