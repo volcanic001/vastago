@@ -42,6 +42,24 @@ func TestSessionListAndDetailUseLocalTime(t *testing.T) {
 	}
 }
 
+func TestSessionListShowsEndDateWhenDifferent(t *testing.T) {
+	start := time.Date(2026, time.September, 11, 10, 13, 0, 0, time.Local)
+	end := time.Date(2026, time.September, 15, 10, 0, 0, 0, time.Local)
+	line := sessionListLine(store.Entry{Task: "Legacy", Start: start, End: &end}, end, 80, false)
+	if !strings.Contains(ansi.Strip(line), "11/09 10:13–15/09 10:00") {
+		t.Fatalf("different end date is hidden: %q", line)
+	}
+}
+
+func TestSelectedSessionLineHasNoInnerStyleReset(t *testing.T) {
+	start := time.Date(2026, time.September, 11, 10, 31, 0, 0, time.Local)
+	end := start.Add(time.Hour)
+	line := sessionListLine(store.Entry{Task: "Trabajo", Start: start, End: &end}, end, 80, true)
+	if strings.Contains(line, "\x1b[") {
+		t.Fatalf("selected row contains an inner ANSI style reset: %q", line)
+	}
+}
+
 func TestSessionListAlignsDurationToRightEdge(t *testing.T) {
 	start := time.Date(2026, time.September, 10, 9, 0, 0, 0, time.Local)
 	end := start.Add(time.Hour)
@@ -50,7 +68,7 @@ func TestSessionListAlignsDurationToRightEdge(t *testing.T) {
 		Task:  "Una tarea con un nombre deliberadamente largo",
 		Start: start,
 		End:   &end,
-	}, end, width)
+	}, end, width, false)
 
 	duration := "1h 00m"
 	if !strings.HasSuffix(line, duration) {

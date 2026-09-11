@@ -9,7 +9,7 @@ Termux en Android.
 
 ## Que incluye el primer MVP
 
-- TUI con panel activo, resumen de hoy y de los ultimos siete dias.
+- Cuatro pantallas enfocadas: sesiones, pendientes, habitos y metricas.
 - Historial reciente y estadisticas agrupadas por tarea.
 - Tres densidades automaticas: amplia, compacta y minima.
 - Inicio y cierre de sesiones desde la TUI o desde comandos cortos.
@@ -69,13 +69,14 @@ Teclas en la TUI:
 
 - `n`: iniciar una sesion.
 - `x`: terminar la sesion activa.
-- `1` a `5`: inicio, pendientes, habitos, sesiones y metricas.
+- `1` a `4`: sesiones, pendientes, habitos y metricas.
 - `tab` y `shift+tab`: cambiar de pantalla.
 
 En Sesiones:
 
 - `j/k` o flechas arriba/abajo: recorrer todo el historial.
 - `enter` o `e`: editar tarea, nota, inicio y fin.
+- `r`: repetir la sesion seleccionada.
 - `tab` y `shift+tab`: elegir campo; `enter` avanza y guarda desde el ultimo.
 - Fechas en hora local, formato `AAAA-MM-DD HH:MM:SS`.
 - `ctrl+u`: limpiar el campo; `esc`: cancelar sin guardar.
@@ -98,7 +99,7 @@ Pulsa `5` para abrir las metricas (semana actual por defecto).
 - `[` y `]`: periodo anterior o siguiente.
 - `t`: volver al periodo actual; sigue el reloj automaticamente.
 - `j/k` o flechas arriba/abajo: desplazar resultados.
-- `tab` o `1–5`: cambiar de pantalla; `?`: ayuda.
+- `tab` o `1–4`: cambiar de pantalla; `?`: ayuda.
 
 Se muestran tiempo enfocado, sesiones, pendientes completados y cumplimiento
 de habitos. La comparativa contrasta el periodo elegido con el anterior equivalente mediante lineas de actividad. Las barras representan la proporcion del tiempo total por tarea.

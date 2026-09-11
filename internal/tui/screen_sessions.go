@@ -13,6 +13,9 @@ func (m Model) sessionView(width int) string {
 	if m.sessionEdit != nil {
 		return m.sessionFormView(width)
 	}
+	if m.sessionRepeatID != "" {
+		return m.sessionRepeatView(width)
+	}
 	if m.sessionDetailID != "" {
 		return m.sessionDetailView(width)
 	}
@@ -33,7 +36,7 @@ func (m Model) sessionView(width int) string {
 	}
 	for row := start; row < min(len(m.db.Entries), start+limit); row++ {
 		entry := m.db.Entries[len(m.db.Entries)-1-row]
-		line := sessionListLine(entry, m.now, width)
+		line := sessionListLine(entry, m.now, width, row == selected)
 		if row == selected {
 			line = selectionStyle.Width(width).Render(line)
 		}
@@ -42,21 +45,48 @@ func (m Model) sessionView(width int) string {
 	return "\n" + strings.Join(lines, "\n")
 }
 
-func sessionListLine(entry store.Entry, now time.Time, width int) string {
-	start := entry.Start.Local()
-	stamp := start.Format("02/01 15:04")
-	if entry.End == nil {
-		stamp += "–ahora"
-	} else {
-		stamp += "–" + entry.End.Local().Format("15:04")
+func (m Model) sessionRepeatView(width int) string {
+	target, targetOK := m.sessionByID(m.sessionRepeatID)
+	active := m.db.Active()
+	if !targetOK || active == nil {
+		return m.emptyScreen(width, "SESIONES", "La sesion ya no existe.")
 	}
+	lines := []string{
+		errorStyle.Render(trimToWidth("Ya hay una sesión activa:", width)),
+		"",
+		valueStyle.Render(trimToWidth(active.Task+" · "+store.FormatDuration(active.Duration(m.now)), width)),
+		"",
+		mutedStyle.Render(trimToWidth(fmt.Sprintf("¿Finalizarla e iniciar %q?", target.Task), width)),
+	}
+	return "\n" + strings.Join(lines, "\n")
+}
+
+func sessionListLine(entry store.Entry, now time.Time, width int, selected bool) string {
+	start := entry.Start.Local()
+	date := start.Format("02/01")
+	rangeText := start.Format("15:04")
+	if entry.End == nil {
+		rangeText += "–ahora"
+	} else {
+		end := entry.End.Local()
+		if sameCalendarDay(start, end) {
+			rangeText += "–" + end.Format("15:04")
+		} else {
+			rangeText += "–" + end.Format("02/01 15:04")
+		}
+	}
+	styledDate := dateStyle.Render(date)
+	if selected {
+		styledDate = date
+	}
+	stamp := styledDate + " " + rangeText
 	state := store.FormatDuration(entry.Duration(now))
 	if entry.End == nil {
 		state += " activa"
 	}
 	left := fmt.Sprintf("%s · %s", stamp, entry.Task)
-	if width < compactBreakpoint {
-		left = fmt.Sprintf("%s %s", start.Format("02/01 15:04"), entry.Task)
+	if width < compactBreakpoint && (entry.End == nil || sameCalendarDay(start, entry.End.Local())) {
+		left = fmt.Sprintf("%s %s", styledDate+" "+rangeText, entry.Task)
 	}
 
 	stateWidth := lipgloss.Width(state)
@@ -66,6 +96,12 @@ func sessionListLine(entry store.Entry, now time.Time, width int) string {
 	left = trimToWidth(left, width-stateWidth-1)
 	gap := max(1, width-lipgloss.Width(left)-stateWidth)
 	return left + strings.Repeat(" ", gap) + state
+}
+
+func sameCalendarDay(first, second time.Time) bool {
+	firstYear, firstMonth, firstDay := first.In(time.Local).Date()
+	secondYear, secondMonth, secondDay := second.In(time.Local).Date()
+	return firstYear == secondYear && firstMonth == secondMonth && firstDay == secondDay
 }
 
 func (m Model) sessionDetailView(width int) string {
@@ -110,9 +146,9 @@ func (m Model) sessionFormView(width int) string {
 }
 
 func (m Model) sessionFooter(width int) string {
-	items := []shortcut{{key: "j/k/↑↓", action: "mover"}, {key: "i", action: "detalle", primary: true}, {key: "enter/e", action: "editar", primary: true}, {key: "d", action: "borrar", tone: shortcutDanger, primary: true}, {key: "n", action: "nueva"}, {key: "x", action: "fin"}, {key: "tab", action: "vistas"}, {key: "q", action: "salir", primary: true}}
+	items := []shortcut{{key: "j/k/↑↓", action: "mover"}, {key: "i", action: "detalle", primary: true}, {key: "r", action: "repetir", primary: true}, {key: "enter/e", action: "editar", primary: true}, {key: "d", action: "borrar", tone: shortcutDanger, primary: true}, {key: "n", action: "nueva"}, {key: "x", action: "fin"}, {key: "tab", action: "vistas"}, {key: "q", action: "salir", primary: true}}
 	if m.sessionEdit != nil {
-		items = []shortcut{{key: "enter", action: "siguiente/guardar", primary: true}, {key: "tab", action: "campo"}, {key: "ctrl+u", action: "limpiar"}, {key: "esc", action: "cancelar"}}
+		items = []shortcut{{key: "↑/↓/tab", action: "campo"}, {key: "ctrl+s", action: "guardar", primary: true}, {key: "ctrl+u", action: "limpiar"}, {key: "esc", action: "cancelar"}}
 	}
 	if m.sessionDetailID != "" {
 		items = []shortcut{{key: "i/esc", action: "volver"}}
@@ -120,12 +156,15 @@ func (m Model) sessionFooter(width int) string {
 	if m.sessionDeleteID != "" {
 		items = []shortcut{{key: "y", action: "borrar", tone: shortcutDanger, primary: true}, {key: "n/esc", action: "cancelar"}}
 	}
+	if m.sessionRepeatID != "" {
+		items = []shortcut{{key: "y", action: "finalizar e iniciar", primary: true}, {key: "n/esc", action: "volver"}}
+	}
 	status := m.message
 	if m.err != nil {
 		status = "error: " + m.err.Error()
 	}
 	separator := " · "
-	if m.sessionDeleteID != "" {
+	if m.sessionDeleteID != "" || m.sessionRepeatID != "" {
 		separator = "    "
 	}
 	return "\n" + mutedStyle.Render(trimToWidth(status, width)) + "\n" + shortcutMenu(width, separator, items)

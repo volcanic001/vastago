@@ -152,6 +152,9 @@ func (db *Database) Start(now time.Time, task, note string) (*Entry, error) {
 	if db.Active() != nil {
 		return nil, ErrActiveEntry
 	}
+	if err := ValidateSession(now, nil, now); err != nil {
+		return nil, err
+	}
 	task = strings.TrimSpace(task)
 	if task == "" {
 		return nil, errors.New("la tarea no puede estar vacia")
@@ -170,6 +173,9 @@ func (db *Database) Stop(now time.Time, note string) (*Entry, error) {
 	entry := db.Active()
 	if entry == nil {
 		return nil, ErrNoActive
+	}
+	if err := ValidateSession(entry.Start, &now, now); err != nil {
+		return nil, err
 	}
 	entry.End = &now
 	if extra := strings.TrimSpace(note); extra != "" {

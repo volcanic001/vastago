@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -8,6 +9,13 @@ import (
 
 	"github.com/volcanic001/vastago/internal/store"
 )
+
+func TestNewDefaultsToSessions(t *testing.T) {
+	model := New(filepath.Join(t.TempDir(), "store.json"))
+	if model.screen != sessionsScreen {
+		t.Fatalf("default screen = %s, want sesiones", model.screen.name())
+	}
+}
 
 func TestStoppingWithoutActiveSessionIsNeutral(t *testing.T) {
 	model := Model{db: &store.Database{}, now: time.Now()}

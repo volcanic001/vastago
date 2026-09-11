@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NimbleMarkets/ntcharts/v2/canvas"
+	"github.com/NimbleMarkets/ntcharts/v2/canvas/runes"
 	tslc "github.com/NimbleMarkets/ntcharts/v2/linechart/timeserieslinechart"
 
 	"github.com/volcanic001/vastago/internal/store"
@@ -102,6 +104,7 @@ func comparisonChart(width int, period store.Period, series comparisonSeries) []
 		chart.PushDataSet(previousComparisonDataSet, tslc.TimePoint{Time: point, Value: series.previous[valueIndex].Seconds()})
 	}
 	chart.DrawBrailleAll()
+	comparisonXAxis(&chart)
 
 	lines := strings.Split(chart.View(), "\n")
 	if len(lines) > 0 {
@@ -110,6 +113,17 @@ func comparisonChart(width int, period store.Period, series comparisonSeries) []
 		lines[len(lines)-1] = comparisonLabels(chartWidth, chart.Origin().X, chart.GraphWidth(), series.labels)
 	}
 	return append([]string{comparisonHeader(width)}, lines...)
+}
+
+// comparisonXAxis restores the X axis after Braille data is drawn. Some data
+// points land on Y=0 and otherwise merge with the axis at different sub-cell
+// positions, making the baseline look uneven. The axis is an integer canvas
+// row, so redraw only its horizontal segment without touching the series.
+func comparisonXAxis(chart *tslc.Model) {
+	y := chart.Origin().Y
+	for x := chart.Origin().X + 1; x < chart.Width(); x++ {
+		chart.Canvas.SetCell(canvas.Point{X: x, Y: y}, canvas.NewCellWithStyle(runes.LineHorizontal, mutedStyle))
+	}
 }
 
 func comparisonMaximum(series comparisonSeries) time.Duration {

@@ -66,7 +66,7 @@ func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.err, m.message = nil, "Sin sesión activa."
 			return m, nil
 		}
-		entry, err := m.db.Stop(time.Now(), "")
+		entry, err := m.db.Stop(m.now, "")
 		if err != nil {
 			m.err = err
 		} else if err := store.Save(m.path, m.db); err != nil {
@@ -117,14 +117,12 @@ func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "shift+tab", "left", "h":
 		m = m.previousScreen()
 	case "1":
-		m = m.selectScreen(homeScreen)
+		m = m.selectScreen(sessionsScreen)
 	case "2":
 		m = m.selectScreen(todosScreen)
 	case "3":
 		m = m.selectScreen(habitsScreen)
 	case "4":
-		m = m.selectScreen(sessionsScreen)
-	case "5":
 		m = m.selectScreen(metricsScreen)
 	case "?":
 		m.help = !m.help
@@ -182,7 +180,7 @@ func (m Model) handleInput(message tea.KeyPressMsg) Model {
 				m.finishInput("pendiente actualizado")
 			}
 		default:
-			if _, err := m.db.Start(time.Now(), value, ""); err != nil {
+			if _, err := m.db.Start(m.now, value, ""); err != nil {
 				m.err = err
 			} else if err := store.Save(m.path, m.db); err != nil {
 				m.err = err

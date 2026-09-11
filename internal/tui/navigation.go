@@ -3,28 +3,33 @@ package tui
 type screen int
 
 const (
-	homeScreen screen = iota
+	sessionsScreen screen = iota
 	todosScreen
 	habitsScreen
-	sessionsScreen
 	metricsScreen
 	screenCount
 )
 
 func (m Model) nextScreen() Model {
 	m.screen = (m.screen + 1) % screenCount
-	return m
+	return m.clearFeedback()
 }
 
 func (m Model) previousScreen() Model {
 	m.screen = (m.screen - 1 + screenCount) % screenCount
-	return m
+	return m.clearFeedback()
 }
 
 func (m Model) selectScreen(selected screen) Model {
-	if selected >= homeScreen && selected < screenCount {
+	if selected >= sessionsScreen && selected < screenCount && selected != m.screen {
 		m.screen = selected
+		return m.clearFeedback()
 	}
+	return m
+}
+
+func (m Model) clearFeedback() Model {
+	m.message, m.err = "", nil
 	return m
 }
 
@@ -39,6 +44,6 @@ func (s screen) name() string {
 	case metricsScreen:
 		return "metricas"
 	default:
-		return "inicio"
+		return "sesiones"
 	}
 }

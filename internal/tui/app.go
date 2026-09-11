@@ -17,6 +17,7 @@ type Model struct {
 	selectedSession int
 	sessionEdit     *sessionForm
 	sessionDeleteID string
+	sessionRepeatID string
 	sessionDetailID string
 	path            string
 	db              *store.Database
@@ -41,7 +42,7 @@ func New(path string) Model {
 	if db == nil {
 		db = &store.Database{}
 	}
-	return Model{path: path, db: db, now: time.Now(), width: 80, height: 24, err: err}
+	return Model{path: path, db: db, now: time.Now(), width: 80, height: 24, screen: sessionsScreen, err: err}
 }
 
 func (m Model) Init() tea.Cmd { return tick() }
@@ -81,7 +82,7 @@ func (m Model) View() tea.View {
 	case metricsScreen:
 		body = m.metricsView(inner)
 	default:
-		body = m.dashboard(inner)
+		body = m.sessionView(inner)
 	}
 
 	content := screenLayout(m.header(inner), body, m.footer(inner), width, m.height)

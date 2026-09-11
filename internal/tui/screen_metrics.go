@@ -73,6 +73,15 @@ func periodLabel(p store.Period) string {
 	}
 }
 
+func metricsPeriodLabel(p store.Period, now time.Time) string {
+	label := periodLabel(p)
+	if p.Kind != store.Week || now.Before(p.Start) || !now.Before(p.End) {
+		return label
+	}
+	prefix := "SEMANA · "
+	return prefix + dateStyle.Render(strings.TrimPrefix(label, prefix))
+}
+
 func (m Model) metricsView(width int) string {
 	content, _ := m.metricsPage(width)
 	return content
@@ -111,7 +120,7 @@ func (m Model) metricsPage(width int) (string, int) {
 		return errorStyle.Render(trimToWidth(err.Error(), width)), 0
 	}
 	if chart := comparisonChart(width, p, buildComparisonSeries(p, currentActivity, previousActivity)); len(chart) > 0 {
-		lines = append(lines, "")
+		lines = append(lines, "", "")
 		lines = append(lines, chart...)
 	}
 	if data.FocusTime == 0 {
@@ -121,7 +130,7 @@ func (m Model) metricsPage(width int) (string, int) {
 		}
 		lines = append(lines, "", mutedStyle.Render(message))
 	} else {
-		lines = append(lines, "", mutedStyle.Render("TIEMPO POR TAREA"))
+		lines = append(lines, "", "", mutedStyle.Render("TIEMPO POR TAREA"))
 		for _, task := range data.Tasks {
 			fraction := float64(task.Duration) / float64(data.FocusTime)
 			lines = append(lines, task.Task+" · "+store.FormatDuration(task.Duration)+" · "+progressPercent(fraction))
@@ -130,7 +139,7 @@ func (m Model) metricsPage(width int) (string, int) {
 	}
 	// Wrap before scrolling so long labels remain readable on narrow terminals.
 	wrapped := strings.Split(ansi.Wrap(strings.Join(lines, "\n"), max(1, width), ""), "\n")
-	title := strings.Split(ansi.Wrap(periodLabel(p), max(1, width), ""), "\n")
+	title := strings.Split(ansi.Wrap(metricsPeriodLabel(p, m.now), max(1, width), ""), "\n")
 	height := m.height
 	if height <= 0 {
 		height = 24

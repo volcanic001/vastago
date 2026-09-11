@@ -62,13 +62,10 @@ func (m Model) footer(width int) string {
 	if m.screen == todosScreen {
 		return status + "\n" + shortcutMenu(width, " · ", []shortcut{{key: "j/k/↑↓", action: "mover"}, {key: "space", action: "completar/reabrir"}, {key: "n", action: "nuevo", primary: true}, {key: "e", action: "editar", primary: true}, {key: "d", action: "borrar", tone: shortcutDanger, primary: true}, {key: "tab", action: "vistas"}, {key: "q", action: "salir", primary: true}})
 	}
-	if m.screen == homeScreen {
-		return status + "\n" + shortcutMenu(width, " · ", []shortcut{{key: "n", action: "iniciar", primary: true}, {key: "x", action: "fin", primary: true}, {key: "2", action: "pendientes"}, {key: "3", action: "habitos"}, {key: "4", action: "sesiones"}, {key: "5", action: "metricas"}, {key: "q", action: "salir", primary: true}})
-	}
-	items := []shortcut{{key: "1-5", action: "vistas"}, {key: "n", action: "nueva"}, {key: "x", action: "terminar"}, {key: "?", action: "ayuda"}, {key: "q", action: "salir", primary: true}}
+	items := []shortcut{{key: "1-4", action: "vistas"}, {key: "n", action: "nueva"}, {key: "x", action: "terminar"}, {key: "?", action: "ayuda"}, {key: "q", action: "salir", primary: true}}
 	footer := status + "\n" + shortcutMenu(width, " · ", items)
 	if m.help {
-		footer += "\n" + mutedStyle.Render(trimToWidth("1-5 o tab cambian vista · n inicia · x termina · r recarga · q sale", width))
+		footer += "\n" + mutedStyle.Render(trimToWidth("1-4 o tab cambian vista · n inicia · x termina · r recarga · q sale", width))
 	}
 	return footer
 }
@@ -175,7 +172,11 @@ func statLine(label, value string, width int) string {
 	if gap < 1 {
 		gap = 1
 	}
-	return mutedStyle.Render(plainLabel) + strings.Repeat(" ", gap) + valueStyle.Render(value)
+	leader := strings.Repeat("·", gap)
+	if gap >= 3 {
+		leader = " " + strings.Repeat("·", gap-2) + " "
+	}
+	return mutedStyle.Render(plainLabel) + guideStyle.Render(leader) + valueStyle.Render(value)
 }
 
 func trimToWidth(value string, width int) string {

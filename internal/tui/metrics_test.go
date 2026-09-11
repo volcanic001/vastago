@@ -77,6 +77,40 @@ func TestMetricsResultsAndFuture(t *testing.T) {
 	}
 }
 
+func TestMetricsVisualHierarchy(t *testing.T) {
+	m := metricsFixture()
+	m.now = time.Date(2026, 9, 11, 12, 0, 0, 0, time.Local)
+	end := m.now.Add(-time.Hour)
+	m.db = &store.Database{Entries: []store.Entry{{ID: "one", Task: "Lectura", Start: end.Add(-time.Hour), End: &end}}}
+
+	period, err := m.selectedPeriod()
+	if err != nil {
+		t.Fatal(err)
+	}
+	rangeLabel := "07/09/2026 - 13/09/2026"
+	if got, want := metricsPeriodLabel(period, m.now), "SEMANA · "+dateStyle.Render(rangeLabel); got != want {
+		t.Fatalf("current week styling = %q, want %q", got, want)
+	}
+	previous, err := period.Shift(-1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := metricsPeriodLabel(previous, m.now), periodLabel(previous); got != want {
+		t.Fatalf("historical week styling = %q, want %q", got, want)
+	}
+
+	content := ansi.Strip(m.metricsView(m.width))
+	if !strings.Contains(content, "SEMANA · "+rangeLabel) {
+		t.Fatalf("missing current week range: %s", content)
+	}
+	if !strings.Contains(content, "Tiempo ···") || !strings.Contains(content, "Sesiones ···") {
+		t.Fatalf("summary does not use dotted leaders: %s", content)
+	}
+	if !strings.Contains(content, "\n\n\nCOMPARATIVA") || !strings.Contains(content, "\n\n\nTIEMPO POR TAREA") {
+		t.Fatalf("metric sections are not sufficiently separated: %s", content)
+	}
+}
+
 func TestMetricsScrollAndInputIsolation(t *testing.T) {
 	m := metricsFixture()
 	m.width, m.height = 16, 12
@@ -106,7 +140,7 @@ func TestMetricsScrollAndInputIsolation(t *testing.T) {
 	}
 	m.inputMode = false
 	updated, _ := m.handleKey(tea.KeyPressMsg(tea.Key{Code: tea.KeyTab}))
-	if updated.(Model).screen != homeScreen {
+	if updated.(Model).screen != sessionsScreen {
 		t.Fatal("global navigation broken")
 	}
 }

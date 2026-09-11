@@ -33,7 +33,7 @@ func TestResponsiveViewsFitTerminalWidth(t *testing.T) {
 		{96, 30},
 		{140, 40},
 	} {
-		for currentScreen := homeScreen; currentScreen < screenCount; currentScreen++ {
+		for currentScreen := sessionsScreen; currentScreen < screenCount; currentScreen++ {
 			model := Model{db: db, now: now, width: size.width, height: size.height, screen: currentScreen}
 			content := model.View().Content
 			if !strings.HasPrefix(ansi.Strip(content), "VASTAGO") {
@@ -54,20 +54,9 @@ func TestResponsiveViewsFitTerminalWidth(t *testing.T) {
 	}
 }
 
-func TestTinyDashboardShowsEssentialInformation(t *testing.T) {
-	now := time.Date(2026, time.September, 9, 12, 0, 0, 0, time.Local)
-	model := Model{db: &store.Database{}, now: now, width: 32, height: 12}
-	content := model.View().Content
-	for _, expected := range []string{"VASTAGO", "SIN SESIÓN ACTIVA", "hoy", "7 dias"} {
-		if !strings.Contains(content, expected) {
-			t.Fatalf("View() does not contain %q: %q", expected, content)
-		}
-	}
-}
-
 func TestScreenShellShowsCurrentSectionAndClock(t *testing.T) {
 	now := time.Date(2026, time.September, 9, 14, 35, 0, 0, time.Local)
-	for currentScreen := homeScreen; currentScreen < screenCount; currentScreen++ {
+	for currentScreen := sessionsScreen; currentScreen < screenCount; currentScreen++ {
 		model := Model{db: &store.Database{}, now: now, width: 96, height: 30, screen: currentScreen}
 		content := model.View().Content
 		for _, expected := range []string{currentScreen.name(), "09/09 14:35"} {

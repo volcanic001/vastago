@@ -23,6 +23,17 @@ func TestComparisonChartShowsWeeklySeriesAndLegend(t *testing.T) {
 			t.Fatalf("chart missing %q: %q", want, chart)
 		}
 	}
+	baseline := ""
+	for _, line := range strings.Split(chart, "\n") {
+		if strings.ContainsRune(line, '└') {
+			baseline = line
+			break
+		}
+	}
+	corner := strings.IndexRune(baseline, '└')
+	if baseline == "" || corner < 0 || strings.Trim(baseline[corner+len("└"):], "─ ") != "" {
+		t.Fatalf("X axis baseline is not one constant horizontal row: %q", baseline)
+	}
 }
 
 func TestComparisonSeriesAdaptsToEachPeriod(t *testing.T) {

@@ -18,6 +18,24 @@ func TestListFootersDescribeBothNavigationMethods(t *testing.T) {
 	}
 }
 
+func TestSessionEditorFooterShowsEditingKeys(t *testing.T) {
+	model := sessionFixture(t)
+	model = pressSession(model, rune(101), "e")
+	footer := strings.TrimSpace(ansi.Strip(model.footer(120)))
+	want := "[↑/↓/tab] campo · [ctrl+s] guardar · [ctrl+u] limpiar · [esc] cancelar"
+	if footer != want {
+		t.Fatalf("editor footer = %q, want %q", footer, want)
+	}
+}
+
+func TestSessionsFooterIncludesRepeat(t *testing.T) {
+	model := Model{db: &store.Database{}, screen: sessionsScreen, width: 100}
+	footer := ansi.Strip(model.footer(model.width))
+	if !strings.Contains(footer, "[r] repetir") {
+		t.Fatalf("sessions footer = %q", footer)
+	}
+}
+
 func TestMetricsFooterUsesTwoRowsWhenNeeded(t *testing.T) {
 	model := Model{db: &store.Database{}, screen: metricsScreen, width: 80}
 	footer := ansi.Strip(model.footer(model.width))
@@ -77,19 +95,5 @@ func TestShortcutMenuKeepsFirstRowCompact(t *testing.T) {
 	want := "[a] a\n[b] b · [c] c · [d] d · [e] e"
 	if got != want {
 		t.Fatalf("shortcut menu = %q, want compact first row %q", got, want)
-	}
-}
-
-func TestHomeShortcutsPrioritizeActionsOnNarrowScreens(t *testing.T) {
-	model := Model{db: &store.Database{}, screen: homeScreen, width: 80}
-	got := strings.TrimPrefix(ansi.Strip(model.footer(model.width)), "\n")
-	want := "[n] iniciar · [x] fin · [q] salir\n[2] pendientes · [3] habitos · [4] sesiones · [5] metricas"
-	if got != want {
-		t.Fatalf("home footer = %q, want %q", got, want)
-	}
-
-	wide := strings.TrimPrefix(ansi.Strip(model.footer(100)), "\n")
-	if strings.Contains(wide, "\n") {
-		t.Fatalf("wide home footer wrapped: %q", wide)
 	}
 }

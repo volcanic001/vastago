@@ -23,6 +23,9 @@ func (m Model) handleSessionKey(key tea.KeyPressMsg) (Model, bool) {
 	if m.sessionEdit != nil {
 		return m.editSessionKey(key), true
 	}
+	if m.sessionRepeatID != "" {
+		return m.handleSessionRepeatConfirmation(key), true
+	}
 	if m.sessionDetailID != "" {
 		switch key.String() {
 		case "i", "esc", "enter":
@@ -57,6 +60,21 @@ func (m Model) handleSessionKey(key tea.KeyPressMsg) (Model, bool) {
 		m.selectedSession = min(m.selectedSession+1, max(0, len(m.db.Entries)-1))
 	case "k", "up":
 		m.selectedSession = max(0, m.selectedSession-1)
+	case "r":
+		if len(m.db.Entries) == 0 {
+			return m, true
+		}
+		entry := m.db.Entries[len(m.db.Entries)-1-m.selectedSession]
+		if active := m.db.Active(); active != nil {
+			if active.ID == entry.ID {
+				m.message, m.err = "esa sesion ya esta activa", nil
+				return m, true
+			}
+			m.sessionRepeatID = entry.ID
+			m.message, m.err = "", nil
+			return m, true
+		}
+		return m.startRepeatedSession(entry.Task), true
 	case "e", "enter", "d", "i":
 		if len(m.db.Entries) == 0 {
 			return m, true
@@ -84,6 +102,65 @@ func (m Model) handleSessionKey(key tea.KeyPressMsg) (Model, bool) {
 	return m, true
 }
 
+func (m Model) startRepeatedSession(task string) Model {
+	db := m.sessionCopy()
+	if _, err := db.Start(m.now, task, ""); err != nil {
+		m.err = err
+		return m
+	}
+	if err := store.Save(m.path, db); err != nil {
+		m.err = err
+		return m
+	}
+	m.db = db
+	m.selectedSession = 0
+	m.sessionRepeatID = ""
+	m.message, m.err = "sesion repetida: "+task, nil
+	return m
+}
+
+func (m Model) handleSessionRepeatConfirmation(key tea.KeyPressMsg) Model {
+	switch key.String() {
+	case "y", "Y":
+		target, ok := m.sessionByID(m.sessionRepeatID)
+		if !ok {
+			m.sessionRepeatID = ""
+			m.err = store.ErrSessionNotFound
+			return m
+		}
+		db := m.sessionCopy()
+		if _, err := db.Stop(m.now, ""); err != nil {
+			m.err = err
+			return m
+		}
+		if _, err := db.Start(m.now, target.Task, ""); err != nil {
+			m.err = err
+			return m
+		}
+		if err := store.Save(m.path, db); err != nil {
+			m.err = err
+			return m
+		}
+		m.db = db
+		m.selectedSession = 0
+		m.sessionRepeatID = ""
+		m.message, m.err = "sesion repetida: "+target.Task, nil
+	case "n", "N", "esc":
+		m.sessionRepeatID = ""
+		m.message, m.err = "cambio cancelado", nil
+	}
+	return m
+}
+
+func (m Model) sessionByID(id string) (store.Entry, bool) {
+	for _, entry := range m.db.Entries {
+		if entry.ID == id {
+			return entry, true
+		}
+	}
+	return store.Entry{}, false
+}
+
 func (m Model) sessionCopy() *store.Database {
 	db := *m.db
 	db.Entries = append([]store.Entry(nil), m.db.Entries...)
@@ -101,47 +178,18 @@ func (m Model) editSessionKey(key tea.KeyPressMsg) Model {
 	case "esc":
 		m.sessionEdit = nil
 		m.err, m.message = nil, "edicion cancelada"
-	case "tab":
-		form.field = (form.field + 1) % count
-	case "shift+tab":
+	case "up", "shift+tab":
 		form.field = (form.field + count - 1) % count
+	case "down", "tab":
+		form.field = (form.field + 1) % count
+	case "ctrl+s":
+		return m.saveSessionEdit(&form)
 	case "enter":
 		if form.field < count-1 {
 			form.field++
 			return m
 		}
-		start, err := parseSessionDate(form.values[2], form.start)
-		if err != nil {
-			m.err = err
-			form.field = 2
-			return m
-		}
-		var end *time.Time
-		if !form.active {
-			value, err := parseSessionDate(form.values[3], *form.end)
-			if err != nil {
-				m.err = err
-				form.field = 3
-				return m
-			}
-			end = &value
-		}
-		if form.active && start.After(time.Now()) {
-			m.err = fmt.Errorf("el inicio activo no puede estar en el futuro")
-			return m
-		}
-		db := m.sessionCopy()
-		err = db.EditSession(form.id, form.values[0], form.values[1], start, end)
-		if err == nil {
-			err = store.Save(m.path, db)
-		}
-		if err != nil {
-			m.err = err
-			return m
-		}
-		m.db = db
-		m.sessionEdit = nil
-		m.err, m.message = nil, "sesion actualizada"
+		return m.saveSessionEdit(&form)
 	case "ctrl+u":
 		form.values[form.field] = ""
 	case "backspace", "ctrl+h":
@@ -152,6 +200,42 @@ func (m Model) editSessionKey(key tea.KeyPressMsg) Model {
 	default:
 		form.values[form.field] += key.Key().Text
 	}
+	return m
+}
+
+func (m Model) saveSessionEdit(form *sessionForm) Model {
+	start, err := parseSessionDate(form.values[2], form.start)
+	if err != nil {
+		m.err = err
+		form.field = 2
+		return m
+	}
+	var end *time.Time
+	if !form.active {
+		value, err := parseSessionDate(form.values[3], *form.end)
+		if err != nil {
+			m.err = err
+			form.field = 3
+			return m
+		}
+		end = &value
+	}
+	if form.active && start.After(m.now) {
+		m.err = fmt.Errorf("el inicio activo no puede estar en el futuro")
+		return m
+	}
+	db := m.sessionCopy()
+	err = db.EditSession(form.id, form.values[0], form.values[1], start, end, m.now)
+	if err == nil {
+		err = store.Save(m.path, db)
+	}
+	if err != nil {
+		m.err = err
+		return m
+	}
+	m.db = db
+	m.sessionEdit = nil
+	m.err, m.message = nil, "sesion actualizada"
 	return m
 }
 
