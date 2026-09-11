@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"charm.land/lipgloss/v2"
 	"github.com/volcanic001/vastago/internal/store"
 )
 
@@ -53,10 +54,18 @@ func sessionListLine(entry store.Entry, now time.Time, width int) string {
 	if entry.End == nil {
 		state += " activa"
 	}
+	left := fmt.Sprintf("%s · %s", stamp, entry.Task)
 	if width < compactBreakpoint {
-		return trimToWidth(fmt.Sprintf("%s %s · %s", start.Format("02/01 15:04"), entry.Task, state), width)
+		left = fmt.Sprintf("%s %s", start.Format("02/01 15:04"), entry.Task)
 	}
-	return trimToWidth(fmt.Sprintf("%s · %s · %s", stamp, entry.Task, state), width)
+
+	stateWidth := lipgloss.Width(state)
+	if stateWidth >= width {
+		return trimToWidth(state, width)
+	}
+	left = trimToWidth(left, width-stateWidth-1)
+	gap := max(1, width-lipgloss.Width(left)-stateWidth)
+	return left + strings.Repeat(" ", gap) + state
 }
 
 func (m Model) sessionDetailView(width int) string {
@@ -101,19 +110,23 @@ func (m Model) sessionFormView(width int) string {
 }
 
 func (m Model) sessionFooter(width int) string {
-	hint := "j/k o ↑↓ mover · i detalle · enter/e editar · d borrar · n nueva · x fin · tab vistas · q salir"
+	items := []shortcut{{key: "j/k/↑↓", action: "mover"}, {key: "i", action: "detalle", primary: true}, {key: "enter/e", action: "editar", primary: true}, {key: "d", action: "borrar", tone: shortcutDanger, primary: true}, {key: "n", action: "nueva"}, {key: "x", action: "fin"}, {key: "tab", action: "vistas"}, {key: "q", action: "salir", primary: true}}
 	if m.sessionEdit != nil {
-		hint = "enter siguiente/guardar · tab campo · ctrl+u limpiar · esc cancelar"
+		items = []shortcut{{key: "enter", action: "siguiente/guardar", primary: true}, {key: "tab", action: "campo"}, {key: "ctrl+u", action: "limpiar"}, {key: "esc", action: "cancelar"}}
 	}
 	if m.sessionDetailID != "" {
-		hint = "i o esc volver"
+		items = []shortcut{{key: "i/esc", action: "volver"}}
 	}
 	if m.sessionDeleteID != "" {
-		hint = "y borrar · n/esc cancelar"
+		items = []shortcut{{key: "y", action: "borrar", tone: shortcutDanger, primary: true}, {key: "n/esc", action: "cancelar"}}
 	}
 	status := m.message
 	if m.err != nil {
 		status = "error: " + m.err.Error()
 	}
-	return "\n" + mutedStyle.Render(trimToWidth(status, width)) + "\n" + mutedStyle.Render(trimToWidth(hint, width))
+	separator := " · "
+	if m.sessionDeleteID != "" {
+		separator = "    "
+	}
+	return "\n" + mutedStyle.Render(trimToWidth(status, width)) + "\n" + shortcutMenu(width, separator, items)
 }

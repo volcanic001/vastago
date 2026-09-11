@@ -4,9 +4,9 @@ type screen int
 
 const (
 	homeScreen screen = iota
-	sessionsScreen
 	todosScreen
 	habitsScreen
+	sessionsScreen
 	metricsScreen
 	screenCount
 )

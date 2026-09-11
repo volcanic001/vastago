@@ -13,8 +13,8 @@ func TestForwardNavigationKeysSelectNextScreen(t *testing.T) {
 		{Code: 'l', Text: "l"},
 	} {
 		updated, _ := (Model{}).handleKey(tea.KeyPressMsg(key))
-		if got := updated.(Model).screen; got != sessionsScreen {
-			t.Errorf("key %q selected screen %d, want %d", key.String(), got, sessionsScreen)
+		if got := updated.(Model).screen; got != todosScreen {
+			t.Errorf("key %q selected screen %d, want %d", key.String(), got, todosScreen)
 		}
 	}
 }
@@ -33,7 +33,7 @@ func TestReverseNavigationWrapsToMetrics(t *testing.T) {
 }
 
 func TestNumberKeysSelectScreens(t *testing.T) {
-	want := []screen{homeScreen, sessionsScreen, todosScreen, habitsScreen, metricsScreen}
+	want := []screen{homeScreen, todosScreen, habitsScreen, sessionsScreen, metricsScreen}
 	for index, expected := range want {
 		key := rune('1' + index)
 		updated, _ := (Model{}).handleKey(tea.KeyPressMsg(tea.Key{Code: key, Text: string(key)}))

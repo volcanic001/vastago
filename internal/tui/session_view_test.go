@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/volcanic001/vastago/internal/store"
 )
@@ -24,7 +25,7 @@ func TestSessionListAndDetailUseLocalTime(t *testing.T) {
 		screen: sessionsScreen,
 	}
 	list := ansi.Strip(model.sessionView(model.width))
-	if !strings.Contains(list, "10/09 11:00–12:00 · Trabajo · 1h 00m") {
+	if !strings.Contains(list, "10/09 11:00–12:00 · Trabajo") || !strings.Contains(list, "1h 00m") {
 		t.Fatalf("session list did not use local range: %q", list)
 	}
 
@@ -38,5 +39,24 @@ func TestSessionListAndDetailUseLocalTime(t *testing.T) {
 	model = pressSession(model, 'i', "i")
 	if model.sessionDetailID != "" {
 		t.Fatal("detail did not close")
+	}
+}
+
+func TestSessionListAlignsDurationToRightEdge(t *testing.T) {
+	start := time.Date(2026, time.September, 10, 9, 0, 0, 0, time.Local)
+	end := start.Add(time.Hour)
+	width := 48
+	line := sessionListLine(store.Entry{
+		Task:  "Una tarea con un nombre deliberadamente largo",
+		Start: start,
+		End:   &end,
+	}, end, width)
+
+	duration := "1h 00m"
+	if !strings.HasSuffix(line, duration) {
+		t.Fatalf("duration is not at the end: %q", line)
+	}
+	if got := lipgloss.Width(line); got != width {
+		t.Fatalf("line width = %d, want %d: %q", got, width, line)
 	}
 }

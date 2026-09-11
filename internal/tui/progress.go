@@ -15,8 +15,8 @@ var (
 	progressEmpty = lipgloss.NewStyle().Foreground(lipgloss.Color("#34413A"))
 )
 
-// focusProgressBar draws a compact btop-like meter. Its filled cells keep one
-// green hue and brighten toward their end. Empty cells remain visible on dark terminals.
+// focusProgressBar draws a compact btop-like meter. Narrow cells leave a small
+// natural gap between segments while the green brightens toward their end.
 func focusProgressBar(width int, fraction float64) string {
 	if width < 3 {
 		return ""
@@ -32,10 +32,10 @@ func focusProgressBar(width int, fraction float64) string {
 	bar.WriteString(mutedStyle.Render("▏"))
 	for i := 0; i < cells; i++ {
 		if i >= filled {
-			bar.WriteString(progressEmpty.Render("░"))
+			bar.WriteString(progressEmpty.Render("▯"))
 			continue
 		}
-		bar.WriteString(lipgloss.NewStyle().Foreground(progressColor(i, filled)).Render("█"))
+		bar.WriteString(lipgloss.NewStyle().Foreground(progressColor(i, filled)).Render("▮"))
 	}
 	bar.WriteString(mutedStyle.Render("▕"))
 	return bar.String()

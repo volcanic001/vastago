@@ -142,22 +142,13 @@ func (m Model) metricsPage(width int) (string, int) {
 }
 
 func (m Model) metricsFooter(width int) string {
-	hints := "d/w/m/y periodo · [/] mover · t actual · j/k o ↑↓ · tab vistas · q salir"
-	if width < 56 {
-		hints = "d/w/m/y · [/] · t · j/k o ↑↓ · tab · q"
-	}
-	if width < 34 {
-		hints = "d/w/m/y · [/] · t\nj/k o ↑↓ · tab · q"
-	}
+	items := []shortcut{{key: "d/w/m/y", action: "periodo", primary: true}, {key: "[/]", action: "mover", primary: true}, {key: "t", action: "actual", primary: true}, {key: "j/k/↑↓", action: "mover"}, {key: "tab", action: "vistas"}, {key: "q", action: "salir", primary: true}}
+	rows := []string{shortcutMenu(width, " · ", items)}
 	if m.help {
-		hints += "\nHabitos: incluye hoy. Comparativa: actual frente al periodo anterior."
+		rows = append(rows, mutedStyle.Render(trimToWidth("Habitos: incluye hoy. Comparativa: actual frente al periodo anterior.", width)))
 	}
 	if m.err != nil {
-		hints = "error: " + m.err.Error() + "\n" + hints
+		rows = append([]string{errorStyle.Render(trimToWidth("error: "+m.err.Error(), width))}, rows...)
 	}
-	rows := strings.Split(hints, "\n")
-	for i := range rows {
-		rows[i] = trimToWidth(rows[i], width)
-	}
-	return "\n" + mutedStyle.Render(strings.Join(rows, "\n"))
+	return "\n" + strings.Join(rows, "\n")
 }

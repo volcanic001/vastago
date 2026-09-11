@@ -25,7 +25,7 @@ func TestDashboardSummarizesTodayAndQuickActions(t *testing.T) {
 	}
 	model := Model{db: db, now: now, width: 80, height: 24}
 	content := ansi.Strip(model.View().Content)
-	for _, want := range []string{"RITMO", "Semana", "HOY", "Habitos", "1/2 hoy", "Pendientes", "1 abiertos", "n iniciar"} {
+	for _, want := range []string{"RITMO", "Semana", "HOY", "Habitos", "1/2 hoy", "Pendientes", "1 abiertos", "[n] iniciar"} {
 		if !strings.Contains(content, want) {
 			t.Fatalf("dashboard missing %q: %s", want, content)
 		}

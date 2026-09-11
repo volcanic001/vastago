@@ -13,7 +13,7 @@ func TestFocusProgressBarUsesFullWidthAndSegments(t *testing.T) {
 	if got := len([]rune(plain)); got != 18 {
 		t.Fatalf("bar width = %d, want 18: %q", got, plain)
 	}
-	if !strings.Contains(plain, "█") || !strings.Contains(plain, "░") {
+	if !strings.Contains(plain, "▮") || !strings.Contains(plain, "▯") {
 		t.Fatalf("bar is not segmented: %q", plain)
 	}
 	dark, bright := progressColor(0, 5), progressColor(4, 5)

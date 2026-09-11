@@ -69,7 +69,7 @@ Teclas en la TUI:
 
 - `n`: iniciar una sesion.
 - `x`: terminar la sesion activa.
-- `1` a `5`: inicio, sesiones, pendientes, habitos y metricas.
+- `1` a `5`: inicio, pendientes, habitos, sesiones y metricas.
 - `tab` y `shift+tab`: cambiar de pantalla.
 
 En Sesiones:
