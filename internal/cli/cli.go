@@ -5,11 +5,13 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"sort"
 	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/colorprofile"
 
 	"github.com/volcanic001/vastago/internal/store"
 	"github.com/volcanic001/vastago/internal/tui"
@@ -76,12 +78,32 @@ func globalArgs(args []string) (string, []string, error) {
 }
 
 func runTUI(path string, stderr io.Writer) int {
-	program := tea.NewProgram(tui.New(path))
+	profile := tuiColorProfile(colorprofile.Detect(os.Stdout, os.Environ()), os.Environ())
+	program := tea.NewProgram(tui.New(path), tea.WithColorProfile(profile))
 	if _, err := program.Run(); err != nil {
 		fmt.Fprintln(stderr, "error:", err)
 		return 1
 	}
 	return 0
+}
+
+func tuiColorProfile(profile colorprofile.Profile, env []string) colorprofile.Profile {
+	if profile < colorprofile.ANSI || !isSSHSession(env) {
+		return profile
+	}
+	// SSH commonly forwards TERM but drops COLORTERM, so colorprofile sees a
+	// truecolor client as ANSI256 and Bubble Tea quantizes Lip Gloss's RGB SGRs.
+	return colorprofile.TrueColor
+}
+
+func isSSHSession(env []string) bool {
+	for _, variable := range env {
+		name, _, found := strings.Cut(variable, "=")
+		if found && (name == "SSH_CONNECTION" || name == "SSH_CLIENT" || name == "SSH_TTY") {
+			return true
+		}
+	}
+	return false
 }
 
 func runStart(path string, args []string, stdout, stderr io.Writer) int {
