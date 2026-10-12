@@ -11,30 +11,34 @@ import (
 type tickMsg time.Time
 
 type Model struct {
-	metricsKind     store.PeriodKind
-	metricsAnchor   time.Time
-	metricsScroll   int
-	selectedSession int
-	sessionEdit     *sessionForm
-	sessionDeleteID string
-	sessionRepeatID string
-	sessionDetailID string
-	path            string
-	db              *store.Database
-	now             time.Time
-	width           int
-	height          int
-	screen          screen
-	selectedTodo    int
-	selectedHabit   int
-	inputAction     inputAction
-	confirmTodo     bool
-	confirmHabit    bool
-	help            bool
-	inputMode       bool
-	input           []rune
-	message         string
-	err             error
+	metricsKind         store.PeriodKind
+	metricsAnchor       time.Time
+	metricsScroll       int
+	selectedSession     int
+	sessionEdit         *sessionForm
+	sessionDeleteID     string
+	sessionRepeatID     string
+	sessionDetailID     string
+	path                string
+	db                  *store.Database
+	now                 time.Time
+	width               int
+	height              int
+	screen              screen
+	selectedTodo        int
+	selectedHabit       int
+	habitHistory        bool
+	habitHistoryYear    int
+	habitHistoryScroll  int
+	habitHistoryScrollX int
+	inputAction         inputAction
+	confirmTodo         bool
+	confirmHabit        bool
+	help                bool
+	inputMode           bool
+	input               []rune
+	message             string
+	err                 error
 }
 
 func New(path string) Model {

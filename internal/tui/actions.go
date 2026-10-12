@@ -30,6 +30,11 @@ func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return updated, nil
 		}
 	}
+	if m.screen == habitsScreen && m.habitHistory && !m.inputMode {
+		if updated, handled := m.handleHabitHistoryKey(message); handled {
+			return updated, nil
+		}
+	}
 	if m.inputMode {
 		return m.handleInput(message), nil
 	}
@@ -91,6 +96,13 @@ func (m Model) handleKey(message tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m = m.toggleSelectedTodo()
 		} else if m.screen == habitsScreen {
 			m = m.toggleSelectedHabit()
+		}
+	case "i":
+		if m.screen == habitsScreen && len(m.db.Habits) > 0 {
+			m.habitHistory = true
+			m.habitHistoryYear = m.now.Year()
+			m.habitHistoryScroll = 0
+			m.message, m.err = "", nil
 		}
 	case "e":
 		if m.screen == todosScreen && len(m.db.Todos) > 0 {

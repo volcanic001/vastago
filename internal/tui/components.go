@@ -26,6 +26,9 @@ func (m Model) footer(width int) string {
 	if m.screen == sessionsScreen && !m.inputMode {
 		return m.sessionFooter(width)
 	}
+	if m.screen == habitsScreen && m.habitHistory && !m.inputMode {
+		return m.habitHistoryFooter(width)
+	}
 
 	var status string
 	if m.inputMode {
@@ -57,7 +60,7 @@ func (m Model) footer(width int) string {
 		return status + "\n" + shortcutMenu(width, "    ", []shortcut{{key: "y", action: "borrar", tone: shortcutDanger, primary: true}, {key: "n/esc", action: "cancelar"}})
 	}
 	if m.screen == habitsScreen {
-		return status + "\n" + shortcutMenu(width, " · ", []shortcut{{key: "j/k/↑↓", action: "mover"}, {key: "space", action: "marcar hoy"}, {key: "n", action: "nuevo", primary: true}, {key: "e", action: "editar", primary: true}, {key: "d", action: "borrar", tone: shortcutDanger, primary: true}, {key: "tab", action: "vistas"}, {key: "q", action: "salir", primary: true}})
+		return status + "\n" + shortcutMenu(width, " · ", []shortcut{{key: "j/k/↑↓", action: "mover"}, {key: "space", action: "marcar hoy"}, {key: "i", action: "historial", primary: true}, {key: "n", action: "nuevo", primary: true}, {key: "e", action: "editar", primary: true}, {key: "d", action: "borrar", tone: shortcutDanger, primary: true}, {key: "tab", action: "vistas"}, {key: "q", action: "salir", primary: true}})
 	}
 	if m.screen == todosScreen {
 		return status + "\n" + shortcutMenu(width, " · ", []shortcut{{key: "j/k/↑↓", action: "mover"}, {key: "space", action: "completar/reabrir"}, {key: "n", action: "nuevo", primary: true}, {key: "e", action: "editar", primary: true}, {key: "d", action: "borrar", tone: shortcutDanger, primary: true}, {key: "tab", action: "vistas"}, {key: "q", action: "salir", primary: true}})

@@ -8,6 +8,9 @@ import (
 )
 
 func (m Model) habitsScreen(width int) string {
+	if m.habitHistory {
+		return m.habitHistoryView(width)
+	}
 	if len(m.db.Habits) == 0 {
 		return m.emptyScreen(width, "HABITOS", "Aun no hay habitos. Pulsa n para crear uno.")
 	}
