@@ -45,6 +45,9 @@ func (m Model) handleMetricsKey(key tea.KeyPressMsg) (Model, bool) {
 		m.metricsAnchor = p.Start
 	case "t":
 		m.metricsAnchor = time.Time{}
+	case "c":
+		m.message, m.err = "tema: "+cycleTheme(), nil
+		return m, true
 	case "j", "down":
 		_, limit := m.metricsPage(max(1, m.width))
 		m.metricsScroll = min(m.metricsScroll+1, limit)
@@ -151,7 +154,7 @@ func (m Model) metricsPage(width int) (string, int) {
 }
 
 func (m Model) metricsFooter(width int) string {
-	items := []shortcut{{key: "d/w/m/y", action: "periodo", primary: true}, {key: "[/]", action: "mover", primary: true}, {key: "t", action: "actual", primary: true}, {key: "j/k/↑↓", action: "mover"}, {key: "tab", action: "vistas"}, {key: "q", action: "salir", primary: true}}
+	items := []shortcut{{key: "d/w/m/y", action: "periodo", primary: true}, {key: "[/]", action: "mover", primary: true}, {key: "t", action: "actual", primary: true}, {key: "j/k/↑↓", action: "mover"}, {key: "c", action: "tema"}, {key: "tab", action: "vistas"}, {key: "q", action: "salir", primary: true}}
 	rows := []string{shortcutMenu(width, " · ", items)}
 	if m.help {
 		rows = append(rows, mutedStyle.Render(trimToWidth("Habitos: incluye hoy. Comparativa: actual frente al periodo anterior.", width)))

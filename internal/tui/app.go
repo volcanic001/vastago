@@ -92,5 +92,6 @@ func (m Model) View() tea.View {
 	content := screenLayout(m.header(inner), body, m.footer(inner), width, m.height)
 	view := tea.NewView(content)
 	view.AltScreen = true
+	view.BackgroundColor = colorBackground
 	return view
 }

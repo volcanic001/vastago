@@ -9,10 +9,12 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
+// progressBase and progressEmpty are set by setTheme (styles.go) so the
+// focus bar's gradient and empty track follow the active theme.
 var (
-	progressBase  = color.RGBA{R: 110, G: 204, B: 94, A: 255}
+	progressBase  color.RGBA
 	progressDark  = 0.36
-	progressEmpty = lipgloss.NewStyle().Foreground(lipgloss.Color("#34413A"))
+	progressEmpty lipgloss.Style
 )
 
 // focusProgressBar draws a compact btop-like meter. Narrow cells leave a small
